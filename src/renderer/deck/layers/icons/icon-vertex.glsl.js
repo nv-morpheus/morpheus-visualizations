@@ -26,12 +26,13 @@ ${common_vs}
 
 in vec2 positions;
 
+in int instanceId;
 in int instanceEdge;
 in int instanceIcon;
 in float instanceAge;
 in float instanceSize;
 // in vec2 instancePosition;
-in vec3 instancePickingColor;
+in vec3 instancePickingColors;
 
 uniform float sizeScale;
 uniform vec2 iconsTextureDim;
@@ -40,6 +41,7 @@ uniform float sizeMaxPixels;
 uniform bool billboard;
 uniform int sizeUnits;
 uniform float maxAge;
+uniform int highlightedIcon;
 
 uniform sampler2D edgeTex;
 uniform sampler2D bundleTex;
@@ -71,8 +73,8 @@ void main(void) {
 
     vec2 edge = bufTex_getXY(instanceEdge, edgeTex, edgeTexSize);
     vec2 bundle = bufTex_getXY(instanceEdge, bundleTex, bundleTexSize);
-    vec2 instanceSourcePosition = getNodePos(edge.x, xPositionTex, yPositionTex, xPositionTexSize, yPositionTexSize);
-    vec2 instanceTargetPosition = getNodePos(edge.y, xPositionTex, yPositionTex, xPositionTexSize, yPositionTexSize);
+    vec2 instanceSourcePosition = getNodePos(min(edge.x, edge.y), xPositionTex, yPositionTex, xPositionTexSize, yPositionTexSize);
+    vec2 instanceTargetPosition = getNodePos(max(edge.x, edge.y), xPositionTex, yPositionTex, xPositionTexSize, yPositionTexSize);
     // Compute the quadratic bezier control point for this edge
     vec2 instanceBezierPosition = computeControlPoint(
         instanceSourcePosition,
@@ -96,7 +98,7 @@ void main(void) {
     vec4 pos64Low = vec4(0.);
     geometry.worldPosition = pos.xyz;
     geometry.uv = positions;
-    geometry.pickingColor = instancePickingColor;
+    geometry.pickingColor = instancePickingColors;
     uv = positions;
 
     vec2 iconSize = instanceIconFrame.zw;
@@ -139,5 +141,9 @@ void main(void) {
     vColor = vec4(1., 1., 1., step(0.0, instanceAge));
 
     DECKGL_FILTER_COLOR(vColor, geometry);
+
+    picking_vRGBcolor_Avalid.a = float(
+        bool(picking_vRGBcolor_Avalid.a) ||
+        instanceId == highlightedIcon);
 }
 `;

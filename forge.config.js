@@ -33,6 +33,7 @@ ${`script-src-elem 'self' 'unsafe-eval' 'unsafe-inline' unpkg.com *.unpkg.com da
         includeDeps: true,
         externals:
           [
+            'apache-arrow',
             '@rapidsai/core', '@rapidsai/cuda', '@rapidsai/cudf',
             '@rapidsai/cugraph', '@rapidsai/cuml', '@rapidsai/cuspatial',
             '@rapidsai/deck.gl', '@rapidsai/glfw', '@rapidsai/io',
@@ -88,7 +89,10 @@ function PatchedForgeExternalsPlugin(opts) {
           }
 
           for (const module of foundModules) {
-            if (file.startsWith(`/node_modules/${module}`) || file === `/node_modules/${module.split('/')[0]}`) {
+            if (file.startsWith(`/node_modules/${module}`)) {
+              return false;
+            }
+            if (file.startsWith(`/node_modules/${module.split('/')[0]}`)) {
               return false;
             }
           }

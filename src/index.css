@@ -23,12 +23,48 @@ html {
     width: 100%;
     height: 100%;
     font-family: sans-serif;
-    background-color: #333;
+    background-color: #1A1918;
+    /* background-color: #333; */
     /* background-color: #999; */
     /* background-color: #2e2e2e; */
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-    Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+div#controls {
+    display: block;
+    top: 0;
+    left: 0;
+    position: absolute;
+    z-index: 999;
+}
+
+.btn-bar {
+    display: block;
+    font-size: 0px;
+}
+
+.btn-bar button {
+    border: 0;
+    margin: 2px;
+    padding: 2px;
+    font-size: 12px;
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.btn-bar button#prev {
+    margin-right: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.btn-bar button#next {
+    margin-left: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
 }

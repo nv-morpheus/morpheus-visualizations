@@ -17,6 +17,8 @@ import { Layer, project32, picking } from '@deck.gl/core';
 // @ts-expect-error
 import { IconLayer as DeckIconLayer } from '@deck.gl/layers';
 
+import { PickingInfo } from '../deck.gl';
+
 import vs from './icons/icon-vertex.glsl';
 import fs from './icons/icon-fragment.glsl';
 
@@ -30,11 +32,13 @@ export class IconLayer extends DeckIconLayer {
       sizeScale: 1,
       sizeMinPixels: 5,
       sizeMaxPixels: 150,
+      highlightedIcon: -1,
     };
   }
 
   static getAccessors({ gl }: { gl: WebGLRenderingContext }) {
     return {
+      instanceId: { size: 1, type: gl.INT, accessor: 'getId' },
       instanceAge: { size: 1, type: gl.FLOAT, accessor: 'getAge' },
       instanceEdge: { size: 1, type: gl.INT, accessor: 'getEdge' },
       instanceIcon: { size: 1, type: gl.INT, accessor: 'getIcon' },
@@ -44,6 +48,7 @@ export class IconLayer extends DeckIconLayer {
 
   protected declare props: any;
   protected declare state: any;
+  protected declare internalState: any;
   setState(newState: any) { return super.setState(newState); }
   getAttributeManager() { return super.getAttributeManager(); }
 
@@ -56,11 +61,11 @@ export class IconLayer extends DeckIconLayer {
   }
 
   initializeState(context: any) {
+    this.internalState.highlightedIconId = -1;
+    this.internalState.highlightedIconLevel = -1;
+    this.internalState.highlightedIconIndex = -1;
     super.initializeState(context);
-    const manager = this.getAttributeManager();
-    const attributes = manager.getAttributes();
-    manager.remove(Object.keys(attributes));
-    manager.addInstanced(IconLayer.getAccessors(context));
+    this.getAttributeManager().addInstanced(IconLayer.getAccessors(context));
   }
 
   shouldUpdateState({ props, oldProps, changeFlags, ...rest }: any) {
@@ -80,6 +85,7 @@ export class IconLayer extends DeckIconLayer {
         bundleTex: this.props.bundleTex,
         xPositionTex: this.props.xPositionTex,
         yPositionTex: this.props.yPositionTex,
+        highlightedIcon: this.props.highlightedIcon,
         iconAtlasFrameTex: this.props.iconAtlasFrame,
         iconAtlasOffsetTex: this.props.iconAtlasOffset,
         edgeTexSize: [this.props.edgeTex.width, this.props.edgeTex.height],
@@ -92,4 +98,30 @@ export class IconLayer extends DeckIconLayer {
     });
     return result;
   }
+
+  getPickingInfo({ mode, info }: { info: PickingInfo, mode: 'hover' | 'click' }) {
+    if (info.index === -1) {
+      info.iconId = -1;
+      info.iconLevel = -1;
+    } else if (info.index === this.internalState.highlightedIconIndex) {
+      info.iconId = this.internalState.highlightedIconId;
+      info.iconLevel = this.internalState.highlightedIconLevel;
+    } else {
+      ([info.iconId] = copyFromAttributeDtoH(info.index, this.props.data.attributes.instanceId));
+      ([info.iconLevel] = copyFromAttributeDtoH(info.index, this.props.data.attributes.instanceIcon));
+    }
+    this.internalState.highlightedIconId = info.iconId;
+    this.internalState.highlightedIconIndex = info.index;
+    this.internalState.highlightedIconLevel = info.iconLevel;
+    info.object = info.index;  // deck.gl uses info.object to check if item has already been added
+    return info;
+  }
+}
+
+function copyFromAttributeDtoH(index: number, attr: any, size = 1) {
+  const { buffer, offset = 0 } = attr;
+  return buffer.getData({
+    length: size,
+    srcByteOffset: <number>offset + (index * buffer.accessor.BYTES_PER_VERTEX),
+  });
 }

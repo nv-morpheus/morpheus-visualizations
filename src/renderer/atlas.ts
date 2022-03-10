@@ -17,6 +17,7 @@ import {
   faImage,
   faVideo,
   faEnvelope,
+  faPaperPlane,
   faCertificate,
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
@@ -32,11 +33,25 @@ export async function loadIcons() {
   const iconWidth = 25;
   const iconHeight = 25;
   const icons = [
-    icon(faImage, { styles: { color: '#2b83ba' } }),
-    icon(faVideo, { styles: { color: '#abdda4' } }),
-    icon(faEnvelope, { styles: { color: '#ffffbf' } }),
-    icon(faCertificate, { styles: { color: '#fdae61' } }),
-    icon(faExclamationTriangle, { styles: { color: '#d7191c' } }),
+    icon(
+      // faEnvelope,
+      faPaperPlane,
+      {
+        styles: { /* color: '#ffffbf', */ /* color: 'rgba(255, 255, 191, 0.25)' */ color: 'rgba(255, 255, 255, 0.25)' },
+        transform: { size: 12 }
+      }),
+    icon(faExclamationTriangle, {
+      styles: { /* color: '#d7191c', */ color: 'rgba(215, 25, 28, 0.75)' }
+    }),
+    icon(faImage, {
+      styles: { color: '#2b83ba', }
+    }),
+    icon(faVideo, {
+      styles: { color: '#abdda4', }
+    }),
+    icon(faCertificate, {
+      styles: { color: '#fdae61', }
+    }),
   ];
   const aSqrt = Math.ceil(Math.sqrt(icons.length));
 

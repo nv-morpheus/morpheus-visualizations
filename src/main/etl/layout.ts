@@ -33,9 +33,9 @@ export function layout(
 
   const inputs = AsyncIterableX
     // while(true)
-    .whileDo(AsyncIterableX.of(0), () => true)
+    .whileDo(AsyncIterableX.of(0), () => new Promise((r) => setTimeout(r, 0, true)))
     // yield values when either `while(true)` or `inputSource` emits
-    .combineLatest(inputSource)
+    .withLatestFrom(inputSource)
     // yield latest inputs value
     .map(([, inputs]) => inputs);
 
@@ -70,14 +70,27 @@ export function layout(
       bbox: [number, number, number, number],
     },
     callback(memo, { inputs, data }) {
+      // const startTime = performance.now();
+
       // Compute positions from the previous positions
       let positions = data.graph.forceAtlas2({
         ...inputs, positions: memo.positions
       });
 
       // Fill NaNs produced by fa2 with zeros (NaNs break fa2)
-      const pos = Series.new(positions);
-      if (pos.isNaN().any()) { positions = pos.replaceNaNs(0).data; }
+      let pos = Series.new(positions);
+      if (pos.isNaN().any()) {
+        positions = pos.replaceNaNs(0).data;
+        pos = Series.new(positions);
+        if (pos.sum() === 0) {
+          const args = { type: new Float32, size: data.graph.numNodes };
+          positions =
+            // xs
+            Series.sequence(args).concat<Float32>(
+              // ys
+              Series.sequence(args)).data;
+        }
+      }
 
       const n = data.graph.numNodes;
       const x = Series.new(positions.subarray(0, n * 1));
@@ -91,8 +104,7 @@ export function layout(
       let icons = memo.icons;
       if (icons) {
         if (memo.time > 0) {
-          const now = performance.now();
-          const deltaT = new CUDF.Scalar({ type: new Float32, value: now - memo.time });
+          const deltaT = new CUDF.Scalar({ type: new Float32, value: 16 });
           icons = icons.assign({ age: icons.get('age').add(deltaT) as Series<Float32> });
           const mask = icons.get('age').le(5000);
           if (!mask.all()) {
@@ -105,6 +117,7 @@ export function layout(
       icons = concatIcons(icons, data.icons);
 
       // Copy the icon buffers to host
+      data.hostBuffers.icon.id = copyDToH(icons.get('id').data, memo.hostBuffers.icon.id);
       data.hostBuffers.icon.age = copyDToH(icons.get('age').data, memo.hostBuffers.icon.age);
       if (data.hostBuffers.icon.changed) {
         data.hostBuffers.icon.icon = copyDToH(icons.get('icon').data, memo.hostBuffers.icon.icon);
@@ -117,7 +130,9 @@ export function layout(
       memo.bbox = bbox;
       memo.icons = icons;
       memo.positions = positions;
-      memo.time = performance.now();
+      memo.time += 16;
+      // memo.time = performance.now();
+      // memo.time += (performance.now() - startTime);
       Object.assign(memo.hostBuffers.node, data.hostBuffers.node);
       Object.assign(memo.hostBuffers.edge, data.hostBuffers.edge);
       Object.assign(memo.hostBuffers.icon, data.hostBuffers.icon);
@@ -138,7 +153,10 @@ export function layout(
 function concatIcons(curIcons?: DataFrame<ShapedIcons>, newIcons?: DataFrame<ShapedIcons>) {
   if (newIcons) {
     if (curIcons) {
-      return curIcons.concat(newIcons);
+      const icons = curIcons.concat(newIcons);
+      return icons.assign({
+        id: Series.sequence({ size: icons.numRows }),
+      });
     }
     return newIcons;
   }
@@ -161,6 +179,7 @@ class DataFrameHostBuffers extends HostBuffers {
       },
       icon: {
         changed: true,
+        id: copyDToH(icons?.get('id')?.data),
         age: copyDToH(icons?.get('age')?.data),
         icon: copyDToH(icons?.get('icon')?.data),
         edge: copyDToH(icons?.get('edge')?.data),

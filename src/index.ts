@@ -78,17 +78,30 @@ Series.new([0, 1, 2]).sum();
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 import { ipcMain } from 'electron';
+import { AsyncSink } from 'ix/Ix.node';
+import { LayoutParams } from './types';
 import { shape } from './main/etl/shape';
 import { layout } from './main/etl/layout';
-import { testDataSource } from './main/etl/test-source';
+import { dataSource } from './main/etl/socket-source';
 
 function onDOMReady(mainWindow: BrowserWindow) {
-  console.log('webContents dom-ready');
   (async () => {
-    for await (const x of layout(shape(testDataSource()))) {
+    const { prev, next, inputs } = inputSource();
+    const shaped = shape(dataSource(prev, next));
+    for await (const x of layout(shaped, inputs)) {
       const done = new Promise((r) => ipcMain.once('renderComplete', r));
       mainWindow.webContents.send('render', x);
       await done;
     }
   })().then(() => { }, (e) => { console.error(e); throw e; });
+}
+
+function inputSource() {
+  const prev = new AsyncSink<void>();
+  const next = new AsyncSink<void>();
+  const inputs = new AsyncSink<LayoutParams>();
+  ipcMain.on('prev', (event) => { prev.write(undefined); });
+  ipcMain.on('next', (event) => { next.write(undefined); });
+  ipcMain.on('layoutParams', (event, params) => { inputs.write(params); });
+  return { prev, next, inputs };
 }

@@ -31,6 +31,7 @@ export class DeviceBuffers {
   };
   public icon: {
     length: number;
+    id: Buffer;
     age: Buffer;
     icon: Buffer;
     edge: Buffer;
@@ -120,6 +121,7 @@ export class RenderState extends DeviceBuffers {
   copyIconBuffers({ bbox, edge, icon, node }: RenderMessage) {
     const { gl } = this;
     this.icon.length = icon.age.length;
+    this.icon.id = this.copyToBuffer(icon.id, this.icon.id, { size: 1, type: gl.INT });
     this.icon.icon = this.copyToBuffer(icon.icon, this.icon.icon, { size: 1, type: gl.INT });
     this.icon.edge = this.copyToBuffer(icon.edge, this.icon.edge, { size: 1, type: gl.INT });
     return this;

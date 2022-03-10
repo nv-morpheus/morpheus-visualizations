@@ -23,6 +23,7 @@ import {
 
 import { loadIcons } from './atlas';
 import { RenderState } from './types';
+import { initControls } from './controls';
 import { init as initDeck, update as updateDeck } from './app';
 
 const { ipcRenderer } = window.require('electron');
@@ -43,34 +44,37 @@ const updates = asyncIterableDefer(() => {
   )
 });
 
+
 initDeck().then(async (appState) => {
+  initControls(ipcRenderer);
   return updates
     .pipe(scanAsyncIterable({
-      seed: new RenderState(appState.gl.canvas, appState.gl)
-        .copyIconAtlas(await loadIcons()),
-      callback(renderState, renderMessage) {
-        if (renderMessage.node.changed
-          || (renderState.node.length !== renderMessage.node.id.length)
-        ) {
-          renderState.copyNodeBuffers(renderMessage);
-        }
-        if (renderMessage.edge.changed
-          || (renderState.edge.length !== renderMessage.edge.id.length)
-        ) {
-          renderState.copyEdgeBuffers(renderMessage);
-        }
-        if (renderMessage.icon.changed
-          || (renderState.icon.length !== renderMessage.icon.age.length)
-        ) {
-          renderState.copyIconBuffers(renderMessage);
-        }
-        renderState.copyDynamicBuffers(renderMessage);
-        ipcRenderer.send('renderComplete', renderMessage);
-        return renderState;
-      }
+      seed: new RenderState(appState.gl.canvas, appState.gl).copyIconAtlas(await loadIcons()),
+      callback: copyRenderState
     }))
     .pipe(scanAsyncIterable({ seed: appState, callback: updateDeck }))
     .forEach(() => { })
 }).catch((e) => {
   console.error(e);
 });
+
+function copyRenderState(renderState: RenderState, renderMessage: RenderMessage) {
+  if (renderMessage.node.changed
+    || (renderState.node.length !== renderMessage.node.id.length)
+  ) {
+    renderState.copyNodeBuffers(renderMessage);
+  }
+  if (renderMessage.edge.changed
+    || (renderState.edge.length !== renderMessage.edge.id.length)
+  ) {
+    renderState.copyEdgeBuffers(renderMessage);
+  }
+  if (renderMessage.icon.changed
+    || (renderState.icon.length !== renderMessage.icon.age.length)
+  ) {
+    renderState.copyIconBuffers(renderMessage);
+  }
+  renderState.copyDynamicBuffers(renderMessage);
+  ipcRenderer.send('renderComplete', renderMessage);
+  return renderState;
+}

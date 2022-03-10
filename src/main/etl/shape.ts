@@ -47,6 +47,7 @@ export async function* shape(source: AsyncIterable<{ type: 'replace' | 'append',
       bundle: Series.new(new BigUint64Array()),
     }),
     icons: new DataFrame({
+      id: Series.new(new Int32Array()),
       edge: Series.new(new Int32Array()),
       icon: Series.new(new Int32Array()),
       age: Series.new(new Float32Array()),
@@ -123,7 +124,10 @@ function makeEdges(graph: DedupedEdgesGraph<Int32>, nodes: DataFrame<ShapedNodes
   return logRuntime('makeEdges', () => {
     return graph.edgeIds.select(['id']).assign({
       edge: graph.edgeIds.select(['src', 'dst']).interleaveColumns().view(new Uint64),
-      color: edgeColors(nodes.select(['id', 'color']), graph.edgeIds.select(['id', 'src', 'dst'])),
+      color: edgeColors(
+        nodes.select(['id', 'color']),
+        graph.edgeIds.select(['id', 'src', 'dst'])
+      ),
       bundle: new DataFrame({
         eindex: Series.sequence({ size: graph.numEdges, init: 0, step: 0 }),
         bcount: Series.sequence({ size: graph.numEdges, init: 1, step: 0 }),
@@ -152,43 +156,53 @@ const defaultPaletteColors = new Uint32Array([
   '#abdda4', // (light green)
   '#66c2a5', // (teal)
   '#3288bd', // (blue)
-].map((x) => parseInt('0xff' + x.slice(1), 16)));
+
+  '#76b900', // NVIDIA green
+  '#1A1918', // NVIDIA black
+].map(hexToInt));
+
+function hexToInt(x: string) { return parseInt('0xff' + x.slice(1), 16); }
 
 const defaultPaletteSeries = Series.new(defaultPaletteColors);
 
 function nodeColors(graph: DedupedEdgesGraph<Int32>, palette = defaultPaletteSeries) {
   return logRuntime('nodeColors', () => {
-    return scope(() => {
-      const codes = scope(() => {
-        const num_clusters = Math.min(graph.numNodes - 1, palette.length);
-        return graph.computeClusters({ type: 'balanced_cut', num_clusters }).get('cluster');
-      }, [graph]);
+    return palette.gather(Series.sequence({ size: graph.numNodes, init: 8, step: 0 }));
+    // return scope(() => {
+    //   const num_clusters = Math.min(graph.numNodes - 1, palette.length);
+    //   const codes = scope(() => {
+    //     return graph.computeClusters({ type: 'balanced_cut', num_clusters }).get('cluster');
+    //   }, [graph]);
 
-      return Array.from({
-        length: Math.ceil((codes.max() + 1) / palette.length) - 1
-      }).map(() => palette)
-        .reduce((p0, p1) => p0.concat<Uint32>(p1), palette)
-        .gather(codes);
-    }, [graph]);
+    //   return Array.from({
+    //     length: Math.ceil(codes.max() / (num_clusters - 1)) // - 1
+    //   }).map(() => palette)
+    //     .reduce((p0, p1) => p0.concat<Uint32>(p1), palette)
+    //     .gather(codes);
+    // }, [graph]);
   });
 }
 
 function edgeColors(
   nodes: DataFrame<{ id: Int32, color: Uint32 }>,
   edges: DataFrame<{ id: Int32, src: Int32, dst: Int32 }>) {
-  return scope(() => {
-    const src = edges
-      .select(['id', 'src'])
-      .join({ on: ['src'], other: nodes.rename({ id: 'src' }) })
-      .sortValues({ id: { ascending: true } })
-      .get('color');
-    const dst = edges
-      .select(['id', 'dst'])
-      .join({ on: ['dst'], other: nodes.rename({ id: 'dst' }) })
-      .sortValues({ id: { ascending: true } })
-      .get('color');
-    return new DataFrame({ src, dst }).interleaveColumns().view(new Uint64);
-  }, [nodes, edges]);
+  return new DataFrame({
+    src: defaultPaletteSeries.gather(Series.sequence({ size: edges.numRows, init: 8, step: 0 })),
+    dst: defaultPaletteSeries.gather(Series.sequence({ size: edges.numRows, init: 8, step: 0 })),
+  }).interleaveColumns().view(new Uint64);
+  // return scope(() => {
+  //   const src = edges
+  //     .select(['id', 'src'])
+  //     .join({ on: ['src'], other: nodes.rename({ id: 'src' }) })
+  //     .sortValues({ id: { ascending: true } })
+  //     .get('color');
+  //   const dst = edges
+  //     .select(['id', 'dst'])
+  //     .join({ on: ['dst'], other: nodes.rename({ id: 'dst' }) })
+  //     .sortValues({ id: { ascending: true } })
+  //     .get('color');
+  //   return new DataFrame({ src, dst }).interleaveColumns().view(new Uint64);
+  // }, [nodes, edges]);
 }
 
 function makeIcons(
@@ -234,7 +248,10 @@ function makeIcons(
         .sortValues({ edge: { ascending: true } });
     }, [src, dst, lvl, deduped]);
 
-    return grouped.flatten().assign({
+    const icons = grouped.flatten();
+
+    return icons.assign({
+      id: Series.sequence({ size: icons.numRows }),
       age: grouped
         .get('icon').flattenIndices()
         .mul(-1000).cast(new Float32)

@@ -54,13 +54,35 @@ export function init() {
         onWebGLInitialized(gl: WebGL2RenderingContext) {
           resolve({ ...state, gl });
         },
-        onHover({ edgeId = -1, nodeId = -1, sourceNodeId = -1, targetNodeId = -1 }: any) {
+        onHover({ edgeId = -1, nodeId = -1, iconId = -1, sourceNodeId = -1, targetNodeId = -1, iconLevel = -1 }: any) {
           state.deck.setProps({
+            highlightedIcon: iconId,
             highlightedEdge: edgeId,
             highlightedNode: nodeId,
             highlightedSourceNode: sourceNodeId,
             highlightedTargetNode: targetNodeId,
           });
+        },
+        getTooltip({ edgeId = -1, nodeId = -1, iconId = -1, sourceNodeId = -1, targetNodeId = -1, iconLevel = -1 }: any) {
+          const style: any = {
+            'color': '#a0a7b4',
+            'padding': '2px',
+            'margin-top': '-6px',
+            'margin-left': '12px',
+            'background-color': 'rgba(26, 25, 24, 0.65)',
+          };
+          if (iconId !== -1) {
+            if (iconLevel === 1) {
+              style['background-color'] = 'rgba(204, 0, 0, 0.65)';
+            } else {
+              style['color'] = 'rgba(0, 0, 0, 0.65)';
+              style['background-color'] = 'rgba(255, 255, 255, 0.65)';
+            }
+            return { style, text: `${iconId}` };
+          }
+          if (nodeId !== -1) { return { style, text: `${nodeId}` }; }
+          if (edgeId !== -1) { return { style, text: `${sourceNodeId}-${targetNodeId}` }; }
+          return null;
         }
       }),
     };
@@ -101,8 +123,8 @@ export async function update(
         autoHighlight: false,
         highlightColor: [225, 225, 225, 100],
         numInstances: edge.length,
-        width: 2,
-        opacity: .5,
+        width: 1,
+        opacity: .2,
         visible: true,
         ...textures,
         ...highlights,
@@ -143,13 +165,13 @@ export async function update(
       }),
 
       new IconLayer({
-        pickable: false,
+        pickable: true,
         billboard: true,
         autoHighlight: true,
         numInstances: icon.length,
         highlightColor: [225, 225, 225, 100],
         sizeUnits: 'pixels',
-        opacity: 0.75,
+        opacity: 1,
         visible: true,
         sizeScale: 12.5,
         sizeMinPixels: 7,
@@ -162,6 +184,7 @@ export async function update(
         getSize() { return 10; },
         data: {
           attributes: {
+            instanceId: { buffer: icon.id },
             instanceAge: { buffer: icon.age },
             instanceEdge: { buffer: icon.edge },
             instanceIcon: { buffer: icon.icon },

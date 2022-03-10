@@ -12,6 +12,7 @@ module.exports = {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
   },
   externals: {
+    'apache-arrow': 'apache-arrow',
     '@rapidsai/core': '@rapidsai/core',
     '@rapidsai/cuda': '@rapidsai/cuda',
     '@rapidsai/cudf': '@rapidsai/cudf',

@@ -24,7 +24,7 @@ export class HostBuffers {
   };
   public icon: {
     changed: boolean;
-    // id: Int32Array;
+    id: Int32Array;
     age: Float32Array;
     icon: Int32Array;
     edge: Int32Array;
@@ -55,7 +55,7 @@ export interface RenderMessage extends HostBuffers {
 export type PreshapedEdges = { src: Int32; dst: Int32; lvl: Int32 };
 export type ShapedNodes = { id: Int32; color: Uint32; size: Uint8; };
 export type ShapedEdges = { id: Int32; color: Uint64; edge: Uint64; bundle: Uint64; };
-export type ShapedIcons = { edge: Int32; icon: Int32; age: Float32; };
+export type ShapedIcons = { id: Int32, edge: Int32; icon: Int32; age: Float32; };
 
 export class LayoutParams {
   public active = true;
@@ -71,6 +71,21 @@ export class LayoutParams {
 
   constructor(params: Partial<LayoutParams> = {}) {
     Object.assign(this, params);
+  }
+
+  toJSON() {
+    return {
+      active: this.active,
+      autoCenter: this.autoCenter,
+      outboundAttraction: this.outboundAttraction,
+      linLogMode: this.linLogMode,
+      edgeWeightInfluence: this.edgeWeightInfluence,
+      jitterTolerance: this.jitterTolerance,
+      barnesHutTheta: this.barnesHutTheta,
+      scalingRatio: this.scalingRatio,
+      strongGravityMode: this.strongGravityMode,
+      gravity: this.gravity,
+    };
   }
 }
 
