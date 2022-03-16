@@ -13,14 +13,14 @@
 // limitations under the License.
 
 // @ts-expect-error
-import { Layer, project32, picking } from '@deck.gl/core';
+import {Layer, picking, project32} from '@deck.gl/core';
 // @ts-expect-error
-import { IconLayer as DeckIconLayer } from '@deck.gl/layers';
+import {IconLayer as DeckIconLayer} from '@deck.gl/layers';
 
-import { PickingInfo } from '../deck.gl';
+import {PickingInfo} from '../deck.gl';
 
-import vs from './icons/icon-vertex.glsl';
 import fs from './icons/icon-fragment.glsl';
+import vs from './icons/icon-vertex.glsl';
 
 export class IconLayer extends DeckIconLayer {
   static get layerName() { return 'IconLayer'; }
@@ -36,13 +36,13 @@ export class IconLayer extends DeckIconLayer {
     };
   }
 
-  static getAccessors({ gl }: { gl: WebGLRenderingContext }) {
+  static getAccessors({gl}: {gl: WebGLRenderingContext}) {
     return {
-      instanceId: { size: 1, type: gl.INT, accessor: 'getId' },
-      instanceAge: { size: 1, type: gl.FLOAT, accessor: 'getAge' },
-      instanceEdge: { size: 1, type: gl.INT, accessor: 'getEdge' },
-      instanceIcon: { size: 1, type: gl.INT, accessor: 'getIcon' },
-      instanceSize: { size: 1, type: gl.FLOAT, accessor: 'getSize' },
+      instanceId: {size: 1, type: gl.INT, accessor: 'getId'},
+      instanceAge: {size: 1, type: gl.FLOAT, accessor: 'getAge'},
+      instanceEdge: {size: 1, type: gl.INT, accessor: 'getEdge'},
+      instanceIcon: {size: 1, type: gl.INT, accessor: 'getIcon'},
+      instanceSize: {size: 1, type: gl.FLOAT, accessor: 'getSize'},
     };
   }
 
@@ -52,34 +52,31 @@ export class IconLayer extends DeckIconLayer {
   setState(newState: any) { return super.setState(newState); }
   getAttributeManager() { return super.getAttributeManager(); }
 
-  constructor(...args: any[]) {
-    super(...args);
-  }
+  constructor(...args: any[]) { super(...args); }
 
   getShaders() {
-    return Layer.prototype.getShaders.call(this, { vs, fs, modules: [project32, picking] });
+    return Layer.prototype.getShaders.call(this, {vs, fs, modules: [project32, picking]});
   }
 
   initializeState(context: any) {
-    this.internalState.highlightedIconId = -1;
+    this.internalState.highlightedIconId    = -1;
     this.internalState.highlightedIconLevel = -1;
     this.internalState.highlightedIconIndex = -1;
     super.initializeState(context);
     this.getAttributeManager().addInstanced(IconLayer.getAccessors(context));
   }
 
-  shouldUpdateState({ props, oldProps, changeFlags, ...rest }: any) {
-    return props.numInstances > 0 ||
-      changeFlags.viewportChanged ||
-      super.shouldUpdateState({ props, changeFlags, oldProps, ...rest });
+  shouldUpdateState({props, oldProps, changeFlags, ...rest}: any) {
+    return props.numInstances > 0 || changeFlags.viewportChanged ||
+           super.shouldUpdateState({props, changeFlags, oldProps, ...rest});
   }
 
-  draw({ uniforms, ...rest }: { uniforms?: any, context?: any } = {}) {
+  draw({uniforms, ...rest}: {uniforms?: any, context?: any} = {}) {
     const result = super.draw({
       ...rest,
       uniforms: {
         ...uniforms,
-        maxAge: 5000,
+        maxAge: 3500,
         opacity: this.props.opacity,
         edgeTex: this.props.edgeTex,
         bundleTex: this.props.bundleTex,
@@ -93,24 +90,26 @@ export class IconLayer extends DeckIconLayer {
         xPositionTexSize: [this.props.xPositionTex.width, this.props.xPositionTex.height],
         yPositionTexSize: [this.props.yPositionTex.width, this.props.yPositionTex.height],
         iconAtlasFrameTexSize: [this.props.iconAtlasFrame.width, this.props.iconAtlasFrame.height],
-        iconAtlasOffsetTexSize: [this.props.iconAtlasOffset.width, this.props.iconAtlasOffset.height],
+        iconAtlasOffsetTexSize:
+          [this.props.iconAtlasOffset.width, this.props.iconAtlasOffset.height],
       }
     });
     return result;
   }
 
-  getPickingInfo({ mode, info }: { info: PickingInfo, mode: 'hover' | 'click' }) {
+  getPickingInfo({mode, info}: {info: PickingInfo, mode: 'hover'|'click'}) {
     if (info.index === -1) {
-      info.iconId = -1;
+      info.iconId    = -1;
       info.iconLevel = -1;
     } else if (info.index === this.internalState.highlightedIconIndex) {
-      info.iconId = this.internalState.highlightedIconId;
+      info.iconId    = this.internalState.highlightedIconId;
       info.iconLevel = this.internalState.highlightedIconLevel;
     } else {
       ([info.iconId] = copyFromAttributeDtoH(info.index, this.props.data.attributes.instanceId));
-      ([info.iconLevel] = copyFromAttributeDtoH(info.index, this.props.data.attributes.instanceIcon));
+      ([info.iconLevel] =
+         copyFromAttributeDtoH(info.index, this.props.data.attributes.instanceIcon));
     }
-    this.internalState.highlightedIconId = info.iconId;
+    this.internalState.highlightedIconId    = info.iconId;
     this.internalState.highlightedIconIndex = info.index;
     this.internalState.highlightedIconLevel = info.iconLevel;
     info.object = info.index;  // deck.gl uses info.object to check if item has already been added
@@ -119,7 +118,7 @@ export class IconLayer extends DeckIconLayer {
 }
 
 function copyFromAttributeDtoH(index: number, attr: any, size = 1) {
-  const { buffer, offset = 0 } = attr;
+  const {buffer, offset = 0} = attr;
   return buffer.getData({
     length: size,
     srcByteOffset: <number>offset + (index * buffer.accessor.BYTES_PER_VERTEX),

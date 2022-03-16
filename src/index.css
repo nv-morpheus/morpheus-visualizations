@@ -31,6 +31,7 @@ html {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  overflow: hidden;
 }
 
 div#controls {
@@ -67,4 +68,8 @@ div#controls {
     margin-left: 0;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
+}
+
+#deckgl-wrapper div#view-OrthographicView {
+    pointer-events: none;
 }

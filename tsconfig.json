@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "module": "commonjs",
+    // "module": "commonjs",
+    "module": "esnext",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "noImplicitAny": true,

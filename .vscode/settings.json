@@ -1,18 +1,36 @@
 {
+    // Configure the xaver.clang-format plugin
+    "clang-format.fallbackStyle": "Google",
+    "clang-format.executable": "clang-format-12",
+    "clang-format.language.javascript.enable": true,
+    "clang-format.language.typescript.enable": true,
+    "[json]": {
+        "editor.tabSize": 2,
+        "editor.formatOnSave": true,
+        "editor.insertSpaces": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
     "[javascript]": {
         "editor.tabSize": 2,
         "editor.formatOnSave": true,
         "editor.insertSpaces": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.defaultFormatter": "xaver.clang-format"
     },
     "[typescript]": {
         "editor.tabSize": 2,
         "editor.formatOnSave": true,
         "editor.insertSpaces": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.defaultFormatter": "xaver.clang-format"
     },
     "[typescriptreact]": {
         "editor.tabSize": 2,
         "editor.formatOnSave": true,
         "editor.insertSpaces": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.defaultFormatter": "vscode.typescript-language-features"
     },
     "files.associations": {
         "*.glsl.ts": "glsl",

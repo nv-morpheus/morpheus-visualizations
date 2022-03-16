@@ -123,7 +123,7 @@ export async function update(
         autoHighlight: false,
         highlightColor: [225, 225, 225, 100],
         numInstances: edge.length,
-        width: 1,
+        width: 2,
         opacity: .2,
         visible: true,
         ...textures,
@@ -181,7 +181,6 @@ export async function update(
         iconAtlasFrame,
         iconAtlasOffset,
         ...textures,
-        getSize() { return 10; },
         data: {
           attributes: {
             instanceId: { buffer: icon.id },

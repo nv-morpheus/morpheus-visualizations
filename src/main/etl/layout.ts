@@ -12,14 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { performance } from 'perf_hooks';
+import {Float32Buffer, MemoryView} from '@rapidsai/cuda';
+import {addon as CUDF, DataFrame, Float32, Int32, Series} from '@rapidsai/cudf';
+import {Graph} from '@rapidsai/cugraph';
+import {AsyncIterable as AsyncIterableX} from 'ix/Ix.node';
+import {performance} from 'perf_hooks';
 
-import { AsyncIterable as AsyncIterableX } from 'ix/Ix.node';
-
-import { Graph } from '@rapidsai/cugraph';
-import { MemoryView, Float32Buffer } from '@rapidsai/cuda';
-import { addon as CUDF, DataFrame, Series, Float32, Int32 } from '@rapidsai/cudf';
-import { HostBuffers, LayoutParams, ShapedNodes, ShapedEdges, ShapedIcons, TextureFormats } from '../../types';
+import {
+  HostBuffers,
+  LayoutParams,
+  ShapedEdges,
+  ShapedIcons,
+  ShapedNodes,
+  TextureFormats
+} from '../../types';
 
 export function layout(
   dataSource: AsyncIterable<{
@@ -28,32 +34,30 @@ export function layout(
     edges: DataFrame<ShapedEdges>,
     icons: DataFrame<ShapedIcons>,
   }>,
-  inputSource: AsyncIterable<LayoutParams> = AsyncIterableX.of(new LayoutParams())
-) {
-
+  inputSource: AsyncIterable<LayoutParams> = AsyncIterableX.of(new LayoutParams())) {
   const inputs = AsyncIterableX
-    // while(true)
-    .whileDo(AsyncIterableX.of(0), () => new Promise((r) => setTimeout(r, 0, true)))
-    // yield values when either `while(true)` or `inputSource` emits
-    .withLatestFrom(inputSource)
-    // yield latest inputs value
-    .map(([, inputs]) => inputs);
+                   // while(true)
+                   .whileDo(AsyncIterableX.of(0), () => new Promise((r) => setTimeout(r, 0, true)))
+                   // yield values when either `while(true)` or `inputSource` emits
+                   .withLatestFrom(inputSource)
+                   // yield latest inputs value
+                   .map(([, inputs]) => inputs);
 
   // Copy each new dataSource value to host buffers
-  const graphAndHostBuffers = AsyncIterableX.as(dataSource)
-    .map(({ nodes, edges, icons, ...rest }) => ({
-      ...rest,
-      icons,
-      hostBuffers: new DataFrameHostBuffers(nodes, edges, icons)
-    }));
+  const graphAndHostBuffers =
+    AsyncIterableX.as(dataSource).map(({nodes, edges, icons, ...rest}) => ({
+                                        ...rest,
+                                        icons,
+                                        hostBuffers: new DataFrameHostBuffers(nodes, edges, icons)
+                                      }));
 
   const inputsAndDataWhileActive = inputs
-    // Select the latest value from `dataSource` in the background,
-    // but only yield it the next time `inputs` yields a value
-    .withLatestFrom(graphAndHostBuffers)
-    .map(([inputs, data]) => ({ inputs, data }))
-    // Only yield values when `inputs.active` is true
-    .filter(({ inputs: { active } }) => active);
+                                     // Select the latest value from `dataSource` in the background,
+                                     // but only yield it the next time `inputs` yields a value
+                                     .withLatestFrom(graphAndHostBuffers)
+                                     .map(([inputs, data]) => ({inputs, data}))
+                                     // Only yield values when `inputs.active` is true
+                                     .filter(({inputs: {active}}) => active);
 
   const fa2Loop = inputsAndDataWhileActive.scan({
     seed: {
@@ -69,26 +73,24 @@ export function layout(
       icons: DataFrame<ShapedIcons>,
       bbox: [number, number, number, number],
     },
-    callback(memo, { inputs, data }) {
-      // const startTime = performance.now();
-
+    callback(memo, {inputs, data}) {
       // Compute positions from the previous positions
-      let positions = data.graph.forceAtlas2({
-        ...inputs, positions: memo.positions
-      });
+      let positions = data.graph.forceAtlas2({...inputs, positions: memo.positions});
 
       // Fill NaNs produced by fa2 with zeros (NaNs break fa2)
       let pos = Series.new(positions);
       if (pos.isNaN().any()) {
         positions = pos.replaceNaNs(0).data;
-        pos = Series.new(positions);
+        pos       = Series.new(positions);
         if (pos.sum() === 0) {
-          const args = { type: new Float32, size: data.graph.numNodes };
+          const args = {type: new Float32, size: data.graph.numNodes};
           positions =
             // xs
-            Series.sequence(args).concat<Float32>(
-              // ys
-              Series.sequence(args)).data;
+            Series.sequence(args)
+              .concat<Float32>(
+                // ys
+                Series.sequence(args))
+              .data;
         }
       }
 
@@ -97,18 +99,20 @@ export function layout(
       const y = Series.new(positions.subarray(n, n * 2));
 
       // Copy the x/y positions to host
-      data.hostBuffers.node.xPosition = alignedCopyDToH(x.data, memo.hostBuffers.node.xPosition, 'RGBA32F');
-      data.hostBuffers.node.yPosition = alignedCopyDToH(y.data, memo.hostBuffers.node.yPosition, 'RGBA32F');
+      data.hostBuffers.node.xPosition =
+        alignedCopyDToH(x.data, memo.hostBuffers.node.xPosition, 'RGBA32F');
+      data.hostBuffers.node.yPosition =
+        alignedCopyDToH(y.data, memo.hostBuffers.node.yPosition, 'RGBA32F');
 
       // Update icon ages
       let icons = memo.icons;
       if (icons) {
         if (memo.time > 0) {
-          const deltaT = new CUDF.Scalar({ type: new Float32, value: 16 });
-          icons = icons.assign({ age: icons.get('age').add(deltaT) as Series<Float32> });
-          const mask = icons.get('age').le(5000);
+          const deltaT = new CUDF.Scalar({type: new Float32, value: 16});
+          icons        = icons.assign({age: icons.get('age').add(deltaT) as Series<Float32>});
+          const mask   = icons.get('age').le(3500);
           if (!mask.all()) {
-            icons = icons.filter(mask);
+            icons                         = icons.filter(mask);
             data.hostBuffers.icon.changed = true;
           }
         }
@@ -117,7 +121,7 @@ export function layout(
       icons = concatIcons(icons, data.icons);
 
       // Copy the icon buffers to host
-      data.hostBuffers.icon.id = copyDToH(icons.get('id').data, memo.hostBuffers.icon.id);
+      data.hostBuffers.icon.id  = copyDToH(icons.get('id').data, memo.hostBuffers.icon.id);
       data.hostBuffers.icon.age = copyDToH(icons.get('age').data, memo.hostBuffers.icon.age);
       if (data.hostBuffers.icon.changed) {
         data.hostBuffers.icon.icon = copyDToH(icons.get('icon').data, memo.hostBuffers.icon.icon);
@@ -127,8 +131,8 @@ export function layout(
       // Compute the positions minimum bounding box [xMin, xMax, yMin, yMax]
       const bbox = [...x.minmax(), ...y.minmax()] as [number, number, number, number];
 
-      memo.bbox = bbox;
-      memo.icons = icons;
+      memo.bbox      = bbox;
+      memo.icons     = icons;
       memo.positions = positions;
       memo.time += 16;
       // memo.time = performance.now();
@@ -147,7 +151,7 @@ export function layout(
     }
   });
 
-  return fa2Loop.map(({ bbox, hostBuffers }) => ({ bbox, ...hostBuffers }));
+  return fa2Loop.map(({bbox, hostBuffers}) => ({bbox, ...hostBuffers}));
 }
 
 function concatIcons(curIcons?: DataFrame<ShapedIcons>, newIcons?: DataFrame<ShapedIcons>) {
@@ -155,7 +159,7 @@ function concatIcons(curIcons?: DataFrame<ShapedIcons>, newIcons?: DataFrame<Sha
     if (curIcons) {
       const icons = curIcons.concat(newIcons);
       return icons.assign({
-        id: Series.sequence({ size: icons.numRows }),
+        id: Series.sequence({size: icons.numRows}),
       });
     }
     return newIcons;
@@ -164,11 +168,9 @@ function concatIcons(curIcons?: DataFrame<ShapedIcons>, newIcons?: DataFrame<Sha
 }
 
 class DataFrameHostBuffers extends HostBuffers {
-  constructor(
-    nodes?: DataFrame<ShapedNodes>,
-    edges?: DataFrame<ShapedEdges>,
-    icons?: DataFrame<ShapedIcons>
-  ) {
+  constructor(nodes?: DataFrame<ShapedNodes>,
+              edges?: DataFrame<ShapedEdges>,
+              icons?: DataFrame<ShapedIcons>) {
     super({
       edge: {
         changed: true,
@@ -196,25 +198,21 @@ class DataFrameHostBuffers extends HostBuffers {
   }
 }
 
-import { getTextureSize } from '../../types';
+import {getTextureSize} from '../../types';
 
 function copyDToH(src: MemoryView, dst?: any) {
   src.copyInto(dst = ((ary) => {
-    if (!ary || ary.length < src.length) {
-      return new src.TypedArray(src.length);
-    }
-    return ary.subarray(0, src.length);
-  })(dst));
+                 if (!ary || ary.length < src.length) { return new src.TypedArray(src.length); }
+                 return ary.subarray(0, src.length);
+               })(dst));
   return dst;
 }
 
 function alignedCopyDToH(src: MemoryView, dst: any, format: TextureFormats) {
   src.copyInto(dst = ((ary) => {
-    const { length } = getTextureSize(format, src.byteLength, src.BYTES_PER_ELEMENT);
-    if (!ary || ary.length < length) {
-      return new src.TypedArray(length);
-    }
-    return ary.subarray(0, length);
-  })(dst));
+                 const {length} = getTextureSize(format, src.byteLength, src.BYTES_PER_ELEMENT);
+                 if (!ary || ary.length < length) { return new src.TypedArray(length); }
+                 return ary.subarray(0, length);
+               })(dst));
   return dst;
 }

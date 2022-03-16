@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { RenderMessage } from '../types';
+import { LayoutParams, RenderMessage } from '../types';
 import {
   defer as asyncIterableDefer,
   fromEventPattern as asyncIterableFromEventPattern,
@@ -23,7 +23,6 @@ import {
 
 import { loadIcons } from './atlas';
 import { RenderState } from './types';
-import { initControls } from './controls';
 import { init as initDeck, update as updateDeck } from './app';
 
 const { ipcRenderer } = window.require('electron');
@@ -46,7 +45,7 @@ const updates = asyncIterableDefer(() => {
 
 
 initDeck().then(async (appState) => {
-  initControls(ipcRenderer);
+  ipcRenderer.send('layoutParams', new LayoutParams().toJSON());
   return updates
     .pipe(scanAsyncIterable({
       seed: new RenderState(appState.gl.canvas, appState.gl).copyIconAtlas(await loadIcons()),

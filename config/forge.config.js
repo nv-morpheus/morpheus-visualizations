@@ -17,29 +17,36 @@ ${`script-src 'self' 'unsafe-eval' 'unsafe-inline' data:;`}\
 ${`script-src-elem 'self' 'unsafe-eval' 'unsafe-inline' unpkg.com *.unpkg.com data:;`}\
 `,
           devServer: { 'liveReload': false },
-          mainConfig: './webpack.main.config.js',
+          mainConfig: './config/webpack.main.config.js',
           renderer: {
             nodeIntegration: true,
-            config: './webpack.renderer.config.js',
-            entryPoints: [{
-              html: './src/index.html',
-              js: './src/renderer.ts',
-              name: 'main_window'
-            }]
+            config: './config/webpack.renderer.config.js',
+            entryPoints: [
+              // {
+              //   html: './src/index.html',
+              //   js: './src/etl.ts',
+              //   name: 'etl_window'
+              // },
+              {
+                html: './src/index.html',
+                js: './src/renderer.ts',
+                name: 'main_window'
+              },
+            ]
           }
         }
       ],
       PatchedForgeExternalsPlugin({
         includeDeps: true,
-        externals:
-          [
-            'apache-arrow',
-            '@rapidsai/core', '@rapidsai/cuda', '@rapidsai/cudf',
-            '@rapidsai/cugraph', '@rapidsai/cuml', '@rapidsai/cuspatial',
-            '@rapidsai/deck.gl', '@rapidsai/glfw', '@rapidsai/io',
-            '@rapidsai/jsdom', '@rapidsai/rmm', '@rapidsai/sql', '@rapidsai/webgl',
-            'wrtc'
-          ]
+        externals: Object.keys(require('./webpack.externals'))
+        // [
+        //   'apache-arrow',
+        //   '@rapidsai/core', '@rapidsai/cuda', '@rapidsai/cudf',
+        //   '@rapidsai/cugraph', '@rapidsai/cuml', '@rapidsai/cuspatial',
+        //   '@rapidsai/deck.gl', '@rapidsai/glfw', '@rapidsai/io',
+        //   '@rapidsai/jsdom', '@rapidsai/rmm', '@rapidsai/sql', '@rapidsai/webgl',
+        //   'wrtc'
+        // ]
       })
     ]
 };

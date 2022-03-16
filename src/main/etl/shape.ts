@@ -12,20 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { logRuntime } from '../../utils';
-import { Graph, DedupedEdgesGraph, renumberNodes, renumberEdges } from '@rapidsai/cugraph';
-import { DataFrame, Series, Float32, Int32, Uint8, Uint32, Uint64, scope } from '@rapidsai/cudf';
-import { PreshapedEdges, ShapedNodes, ShapedEdges, ShapedIcons } from '../../types';
+import {DataFrame, Float32, Int32, scope, Series, Uint32, Uint64, Uint8} from '@rapidsai/cudf';
+import {DedupedEdgesGraph, Graph, renumberEdges, renumberNodes} from '@rapidsai/cugraph';
+
+import {PreshapedEdges, ShapedEdges, ShapedIcons, ShapedNodes} from '../../types';
+import {logRuntime} from '../../utils';
 
 interface Shaped {
   graph: DedupedEdgesGraph<Int32>;
   nodes: DataFrame<ShapedNodes>;
   edges: DataFrame<ShapedEdges>;
   icons: DataFrame<ShapedIcons>;
-};
+}
+;
 
-export async function* shape(source: AsyncIterable<{ type: 'replace' | 'append', edges: Uint8Array }>) {
-
+export async function*
+  shape(source: AsyncIterable<{type: 'replace' | 'append', edges: Uint8Array}>) {
   let curEdges = new DataFrame({
     src: Series.new(new Int32Array()),
     dst: Series.new(new Int32Array()),
@@ -42,6 +44,8 @@ export async function* shape(source: AsyncIterable<{ type: 'replace' | 'append',
     }),
     edges: new DataFrame({
       id: Series.new(new Int32Array()),
+      src: Series.new(new Int32Array()),
+      dst: Series.new(new Int32Array()),
       color: Series.new(new BigUint64Array()),
       edge: Series.new(new BigUint64Array()),
       bundle: Series.new(new BigUint64Array()),
@@ -56,60 +60,53 @@ export async function* shape(source: AsyncIterable<{ type: 'replace' | 'append',
 
   for await (const value of source) {
     yield logRuntime('\nshape', () => {
-
       const newEdges = DataFrame.fromArrow<PreshapedEdges>(value.edges);
 
       if (value.type === 'replace') {
-        curEdges = newEdges;
+        curEdges     = newEdges;
         shaped.graph = makeGraph(curEdges);
         shaped.nodes = makeNodes(shaped.graph);
         shaped.edges = makeEdges(shaped.graph, shaped.nodes);
-        shaped.icons = makeIcons(
-          curEdges.get('src'),
-          curEdges.get('dst'),
-          curEdges.get('lvl'),
-          shaped.graph.edgeIds.select(['id', 'src', 'dst']));
+        shaped.icons = makeIcons(curEdges.get('src'),
+                                 curEdges.get('dst'),
+                                 curEdges.get('lvl'),
+                                 shaped.graph.edgeIds.select(['id', 'src', 'dst']));
       } else {
         // Append new edges
         curEdges = curEdges.concat(newEdges);
         // Remove edges older than 10s
-        // curEdges = curEdges.filter(curEdges.get('expire').ge(performance.now())).concat(newEdges);
+        // curEdges =
+        // curEdges.filter(curEdges.get('expire').ge(performance.now())).concat(newEdges);
         shaped.graph = makeGraph(curEdges);
         shaped.nodes = makeNodes(shaped.graph);
         shaped.edges = makeEdges(shaped.graph, shaped.nodes);
-        shaped.icons = makeIcons(
-          newEdges.get('src'),
-          newEdges.get('dst'),
-          newEdges.get('lvl')
-        );
+        shaped.icons = makeIcons(newEdges.get('src'), newEdges.get('dst'), newEdges.get('lvl'));
       }
 
-      return { type: value.type, ...shaped };
+      return {type: value.type, ...shaped};
     });
   }
 }
 
 function makeGraph(preshapedEdges: DataFrame<PreshapedEdges>) {
   return logRuntime('makeGraph', () => {
-
     const deduped = new DataFrame({
-      src: preshapedEdges.get('src'),
-      dst: preshapedEdges.get('dst'),
-      id: Series.sequence({ size: preshapedEdges.numRows })
-    })
-      .groupBy({ by: ['src', 'dst'], index_key: 'src_dst' })
-      .min()
-      .sortValues({ id: { ascending: true } });
+                      src: preshapedEdges.get('src'),
+                      dst: preshapedEdges.get('dst'),
+                      id: Series.sequence({size: preshapedEdges.numRows})
+                    })
+                      .groupBy({by: ['src', 'dst'], index_key: 'src_dst'})
+                      .min()
+                      .sortValues({id: {ascending: true}});
 
-    const src = deduped.get('src_dst').getChild('src');
-    const dst = deduped.get('src_dst').getChild('dst');
+    const src   = deduped.get('src_dst').getChild('src');
+    const dst   = deduped.get('src_dst').getChild('dst');
     const nodes = renumberNodes(src, dst);
-    const edges = renumberEdges(src, dst,
-      Series.sequence({ type: new Float32, size: src.length, init: 1, step: 0 }),
-      nodes
-    );
+    const edges = renumberEdges(
+      src, dst, Series.sequence({type: new Float32, size: src.length, init: 1, step: 0}), nodes);
 
-    return new (DedupedEdgesGraph as any)(nodes, edges, { directed: true }) as DedupedEdgesGraph<Int32>;
+    return new (DedupedEdgesGraph as any)(nodes, edges, {directed: true}) as
+           DedupedEdgesGraph<Int32>;
   });
 }
 
@@ -122,43 +119,40 @@ function makeNodes(graph: DedupedEdgesGraph<Int32>) {
 
 function makeEdges(graph: DedupedEdgesGraph<Int32>, nodes: DataFrame<ShapedNodes>) {
   return logRuntime('makeEdges', () => {
-    return graph.edgeIds.select(['id']).assign({
+    return graph.edgeIds.select(['id', 'src', 'dst']).assign({
       edge: graph.edgeIds.select(['src', 'dst']).interleaveColumns().view(new Uint64),
-      color: edgeColors(
-        nodes.select(['id', 'color']),
-        graph.edgeIds.select(['id', 'src', 'dst'])
-      ),
+      color: edgeColors(nodes.select(['id', 'color']), graph.edgeIds.select(['id', 'src', 'dst'])),
       bundle: new DataFrame({
-        eindex: Series.sequence({ size: graph.numEdges, init: 0, step: 0 }),
-        bcount: Series.sequence({ size: graph.numEdges, init: 1, step: 0 }),
-      }).interleaveColumns().view(new Uint64),
+                eindex: Series.sequence({size: graph.numEdges, init: 0, step: 0}),
+                bcount: Series.sequence({size: graph.numEdges, init: 1, step: 0}),
+              })
+                .interleaveColumns()
+                .view(new Uint64),
     });
   });
 }
 
 function nodeSizes(graph: Graph<Int32>) {
   return logRuntime('nodeSizes', () => {
-    return scope(() => {
-      return graph.degree().get('degree')
-        .scale().mul(254).add(1).cast(new Uint8)
-    }, [graph]);
+    return scope(
+      () => {return graph.degree().get('degree').scale().mul(254).add(1).cast(new Uint8)}, [graph]);
   });
 }
 
 const defaultPaletteColors = new Uint32Array([
   // # https://colorbrewer2.org/#type=diverging&scheme=Spectral&n=9
-  '#f46d43', // (orange)
-  '#d53e4f', // (light-ish red)
+  '#f46d43',  // (orange)
+  '#d53e4f',  // (light-ish red)
   // '#fdae61', // (light orange)
-  '#fee08b', // (yellow)
-  '#ffffbf', // (yellowish white)
-  '#e6f598', // (light yellowish green)
-  '#abdda4', // (light green)
-  '#66c2a5', // (teal)
-  '#3288bd', // (blue)
+  '#fee08b',  // (yellow)
+  '#ffffbf',  // (yellowish white)
+  '#e6f598',  // (light yellowish green)
+  '#abdda4',  // (light green)
+  '#66c2a5',  // (teal)
+  '#3288bd',  // (blue)
 
-  '#76b900', // NVIDIA green
-  '#1A1918', // NVIDIA black
+  '#76b900',  // NVIDIA green
+  '#1A1918',  // NVIDIA black
 ].map(hexToInt));
 
 function hexToInt(x: string) { return parseInt('0xff' + x.slice(1), 16); }
@@ -167,7 +161,7 @@ const defaultPaletteSeries = Series.new(defaultPaletteColors);
 
 function nodeColors(graph: DedupedEdgesGraph<Int32>, palette = defaultPaletteSeries) {
   return logRuntime('nodeColors', () => {
-    return palette.gather(Series.sequence({ size: graph.numNodes, init: 8, step: 0 }));
+    return palette.gather(Series.sequence({size: graph.numNodes, init: 8, step: 0}));
     // return scope(() => {
     //   const num_clusters = Math.min(graph.numNodes - 1, palette.length);
     //   const codes = scope(() => {
@@ -183,13 +177,16 @@ function nodeColors(graph: DedupedEdgesGraph<Int32>, palette = defaultPaletteSer
   });
 }
 
-function edgeColors(
-  nodes: DataFrame<{ id: Int32, color: Uint32 }>,
-  edges: DataFrame<{ id: Int32, src: Int32, dst: Int32 }>) {
+function edgeColors(nodes: DataFrame<{id: Int32, color: Uint32}>,
+                    edges: DataFrame<{id: Int32, src: Int32, dst: Int32}>) {
   return new DataFrame({
-    src: defaultPaletteSeries.gather(Series.sequence({ size: edges.numRows, init: 8, step: 0 })),
-    dst: defaultPaletteSeries.gather(Series.sequence({ size: edges.numRows, init: 8, step: 0 })),
-  }).interleaveColumns().view(new Uint64);
+           src:
+             defaultPaletteSeries.gather(Series.sequence({size: edges.numRows, init: 8, step: 0})),
+           dst:
+             defaultPaletteSeries.gather(Series.sequence({size: edges.numRows, init: 8, step: 0})),
+         })
+    .interleaveColumns()
+    .view(new Uint64);
   // return scope(() => {
   //   const src = edges
   //     .select(['id', 'src'])
@@ -205,56 +202,50 @@ function edgeColors(
   // }, [nodes, edges]);
 }
 
-function makeIcons(
-  src: Series<Int32>,
-  dst: Series<Int32>,
-  lvl: Series<Int32>,
-  deduped?: DataFrame<{ id: Int32; src: Int32; dst: Int32; }>) {
+function makeIcons(src: Series<Int32>,
+                   dst: Series<Int32>,
+                   lvl: Series<Int32>,
+                   deduped?: DataFrame<{id: Int32; src: Int32; dst: Int32;}>) {
   return logRuntime('makeIcons', () => {
-
     deduped ??= DedupedEdgesGraph.fromEdgeList<Int32>(src, dst).edgeIds;
 
     const grouped = scope(() => {
-
-      const { ids, levels } = scope(() => {
-
+      const {ids, levels} = scope(() => {
         const edges = scope(() => {
           const g = Graph.fromEdgeList<Int32>(src, dst);
-          return g.edgeIds.drop(['id']).assign({ lvl })
-            .join({ how: 'left', on: ['src', 'dst'], other: deduped })
-            .sortValues({ id: { ascending: true } });
+          return g.edgeIds.drop(['id'])
+            .assign({lvl})
+            .join({how: 'left', on: ['src', 'dst'], other: deduped})
+            .sortValues({id: {ascending: true}});
         }, [src, dst, lvl, deduped]);
 
         const ids = scope(() => {
-          return edges
-            .select(['src', 'dst', 'id'])
-            .groupBy({ by: ['src', 'dst'], index_key: 'src_dst' })
-            .min().rename({ id: 'edge' });
+          return edges.select(['src', 'dst', 'id'])
+            .groupBy({by: ['src', 'dst'], index_key: 'src_dst'})
+            .min()
+            .rename({id: 'edge'});
         }, [edges]);
 
         const levels = scope(() => {
-          return edges
-            .select(['src', 'dst', 'lvl'])
-            .groupBy({ by: ['src', 'dst'], index_key: 'src_dst' })
-            .collectList().rename({ lvl: 'icon' });
+          return edges.select(['src', 'dst', 'lvl'])
+            .groupBy({by: ['src', 'dst'], index_key: 'src_dst'})
+            .collectList()
+            .rename({lvl: 'icon'});
         }, [edges]);
 
-        return { ids, levels };
+        return {ids, levels};
       }, [src, dst, lvl, deduped]);
 
-      return ids
-        .join({ on: ['src_dst'], other: levels })
-        .drop(['src_dst'])
-        .sortValues({ edge: { ascending: true } });
+      return ids.join({on: ['src_dst'], other: levels}).drop(['src_dst']).sortValues({
+        edge: {ascending: true}
+      });
     }, [src, dst, lvl, deduped]);
 
     const icons = grouped.flatten();
 
     return icons.assign({
-      id: Series.sequence({ size: icons.numRows }),
-      age: grouped
-        .get('icon').flattenIndices()
-        .mul(-1000).cast(new Float32)
+      id: Series.sequence({size: icons.numRows}),
+      age: grouped.get('icon').flattenIndices().mul(-1000).cast(new Float32)
     });
   });
 }

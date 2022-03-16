@@ -12,83 +12,90 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { icon } from '@fortawesome/fontawesome-svg-core';
+import {icon} from '@fortawesome/fontawesome-svg-core';
 import {
-  faImage,
-  faVideo,
-  faEnvelope,
-  faPaperPlane,
   faCertificate,
+  faEnvelope,
   faExclamationTriangle,
+  faImage,
+  faPaperPlane,
+  faVideo,
 } from '@fortawesome/free-solid-svg-icons';
 
 export interface IconAtlas {
   atlas: ImageData;
   frame: Float32Array;
   offset: Float32Array;
-};
+}
+;
 
 export async function loadIcons() {
-
-  const iconWidth = 25;
+  const iconWidth  = 25;
   const iconHeight = 25;
-  const icons = [
-    icon(
-      // faEnvelope,
-      faPaperPlane,
-      {
-        styles: { /* color: '#ffffbf', */ /* color: 'rgba(255, 255, 191, 0.25)' */ color: 'rgba(255, 255, 255, 0.25)' },
-        transform: { size: 12 }
-      }),
-    icon(faExclamationTriangle, {
-      styles: { /* color: '#d7191c', */ color: 'rgba(215, 25, 28, 0.75)' }
-    }),
+  const icons      = [
+    icon(faEnvelope,
+         // faPaperPlane,
+         {
+           styles: {
+             /* color: '#ffffbf', */ /* color: 'rgba(255, 255, 191, 0.25)' */
+             color: 'rgba(255, 255, 255, 0.25)'
+           },
+           transform: {size: 10}
+         }),
+    icon(faExclamationTriangle,
+         {styles: {/* color: '#d7191c', */ color: 'rgba(215, 25, 28, 0.75)'}}),
     icon(faImage, {
-      styles: { color: '#2b83ba', }
+      styles: {
+        color: '#2b83ba',
+      }
     }),
     icon(faVideo, {
-      styles: { color: '#abdda4', }
+      styles: {
+        color: '#abdda4',
+      }
     }),
     icon(faCertificate, {
-      styles: { color: '#fdae61', }
+      styles: {
+        color: '#fdae61',
+      }
     }),
   ];
   const aSqrt = Math.ceil(Math.sqrt(icons.length));
 
-  const canvas: HTMLCanvasElement = new ((window as any).OffscreenCanvas)(
-    (iconWidth + 2) * aSqrt,
-    (iconHeight + 2) * aSqrt
-  );
+  const canvas: HTMLCanvasElement =
+    new ((window as any).OffscreenCanvas)((iconWidth + 2) * aSqrt, (iconHeight + 2) * aSqrt);
 
   const context = canvas.getContext('2d');
 
   const imagePromises = icons
-    .map(({ html }, i) => ({
-      width: iconWidth - 2,
-      height: iconHeight - 2,
-      x: 1 + iconWidth * Math.floor(i % aSqrt),
-      y: 1 + iconHeight * Math.floor(i / aSqrt),
-      src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(html.flat(Infinity).join(''))}`
-    }))
-    .map(({ x, y, width, height, src }, i) => {
-      const image = new Image(width + 2, height + 2);
-      return new Promise<number[]>((resolve, reject) => {
-        image.onload = () => {
-          image.onload = image.onerror = null;
-          context.drawImage(image, x - 1, y - 1, width + 2, height + 2);
-          resolve([x, y, width, height]);
-        };
-        image.onerror = (err) => {
-          image.onload = image.onerror = null;
-          reject(err);
-        };
-        image.src = src;
-      });
-    });
+                          .map(({html}, i) => ({
+                                 width: iconWidth - 2,
+                                 height: iconHeight - 2,
+                                 x: 1 + iconWidth * Math.floor(i % aSqrt),
+                                 y: 1 + iconHeight * Math.floor(i / aSqrt),
+                                 src: `data:image/svg+xml;charset=utf-8,${
+                                   encodeURIComponent(html.flat(Infinity).join(''))}`
+                               }))
+                          .map(({x, y, width, height, src}, i) => {
+                            const image = new Image(width + 2, height + 2);
+                            return new Promise<number[]>((resolve, reject) => {
+                              image.onload = () => {
+                                image.onload = image.onerror = null;
+                                context.drawImage(image, x - 1, y - 1, width + 2, height + 2);
+                                resolve([x, y, width, height]);
+                              };
+                              image.onerror = (err) => {
+                                image.onload = image.onerror = null;
+                                reject(err);
+                              };
+                              image.src = src;
+                            });
+                          });
 
-  return await Promise.all(imagePromises).then((frames) => ({
-    frame: new Float32Array(frames.flat()),
-    atlas: context.getImageData(0, 0, canvas.width, canvas.height),
-    offset: new Float32Array(frames.flatMap(([x, y, w, h]) => [w / 2, h / 2])),
-  }));
+  return await Promise.all(imagePromises)
+    .then((frames) => ({
+            frame: new Float32Array(frames.flat()),
+            atlas: context.getImageData(0, 0, canvas.width, canvas.height),
+            offset: new Float32Array(frames.flatMap(([x, y, w, h]) => [w / 2, h / 2])),
+          }));
 };
