@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {DataFrame, Float32, Int32, scope, Series} from '@rapidsai/cudf';
+import {addon as CUDF, DataFrame, Float32, Int32, scope, Series} from '@rapidsai/cudf';
 import {DedupedEdgesGraph, Graph} from '@rapidsai/cugraph';
 
 export function makeIcons(src: Series<Int32>,
@@ -57,6 +57,14 @@ export function makeIcons(src: Series<Int32>,
 
   return icons.assign({
     id: Series.sequence({size: icons.numRows}),
-    age: grouped.get('icon').flattenIndices().mul(-500).cast(new Float32)
+    age: grouped.get('icon')
+             .flattenIndices()
+             .mul(goldenRatioConjugate)
+             .mul(negative250)
+             .add(negative1) as Series<Float32>
   });
 }
+
+const goldenRatioConjugate = new CUDF.Scalar({type: new Float32, value: 0.618033988749895});
+const negative250          = new CUDF.Scalar({type: new Float32, value: -250});
+const negative1            = new CUDF.Scalar({type: new Float32, value: -1});

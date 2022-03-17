@@ -21,25 +21,19 @@ import DeckGL from '@deck.gl/react';
 import { OrthographicView } from '@deck.gl/core';
 import { mapPropsStream, createEventHandler } from 'recompose';
 
-import { RenderMessage } from '../types';
 import { RenderState } from '../renderer/types';
 import { loadIcons } from '../renderer/atlas';
 import { EdgeLayer } from '../renderer/deck/layers/edges';
 import { NodeLayer } from '../renderer/deck/layers/nodes';
 import { IconLayer } from '../renderer/deck/layers/icons';
 
-const { ipcRenderer } = window.require('electron');
-
-interface AppProps {
-  style: any;
-  width: string | number;
-  height: string | number;
+interface DeckProps {
+  style?: any;
+  width?: string | number;
+  height?: string | number;
   autoCenter: boolean;
-  setAutoCenter: (autoCenter: boolean) => void;
-}
-
-interface AppAndRenderStateProps extends AppProps {
   renderState: RenderState;
+  setAutoCenter: (autoCenter: boolean) => void;
   onWebGLInitialized: (gl: WebGL2RenderingContext) => void;
 }
 
@@ -54,39 +48,7 @@ interface HoverInfo {
   targetNodeId?: number;
 }
 
-const withRenderState = mapPropsStream<AppAndRenderStateProps, AppProps>((props) => {
-  ipcRenderer.send('renderComplete', {});
-
-  const { handler: onWebGLInitialized, stream: glContexts } = createEventHandler();
-
-  const props_ = Ix.ai.from<AppProps>(props as any);
-
-  const contexts_ = Ix.ai.from<WebGL2RenderingContext>(glContexts as any)
-    .pipe(Ix.ai.ops.startWith(null as WebGL2RenderingContext));
-
-  return Ix.ai
-    .combineLatest(props_, contexts_, renderMessages())
-    .pipe(Ix.ai.ops.scan({
-      seed: undefined as AppAndRenderStateProps,
-      async callback({ renderState } = {} as any, [props, gl, renderMessage]) {
-        if (renderMessage) {
-          if (gl) {
-            renderState ??= new RenderState(gl.canvas, gl).copyIconAtlas(await loadIcons());
-            renderState = renderState.copyRenderMessage(renderMessage);
-          }
-        }
-        ipcRenderer.send('renderComplete', {} /*renderMessage*/);
-        return {
-          ...props,
-          renderState,
-          onWebGLInitialized,
-        };
-      }
-    }))
-    .pipe(Ix.ai.toObservable);
-});
-
-export const Deck = withRenderState(({ renderState, autoCenter, setAutoCenter, ...props }) => {
+export const Deck = ({ renderState, autoCenter, setAutoCenter, ...props }: DeckProps) => {
 
   const ref = React.useRef(null);
   const [tooltip, setTooltip] = React.useState(null);
@@ -115,7 +77,7 @@ export const Deck = withRenderState(({ renderState, autoCenter, setAutoCenter, .
   const [
     tooltipX = tooltip?.x,
     tooltipY = tooltip?.y,
-  ] = (ref.current as any)?.deck?.animationLoop.animationProps._mousePosition || [];
+  ] = (ref.current as any)?.deck?.animationLoop?.animationProps?._mousePosition || [];
 
   if ((ref.current as any)?.deck?.tooltip?.el) {
     (ref.current as any).deck.tooltip.remove();
@@ -163,7 +125,7 @@ export const Deck = withRenderState(({ renderState, autoCenter, setAutoCenter, .
       )}
     </DeckGL>
   );
-});
+};
 
 function edgeLayer(renderState: RenderState, textures: any, highlights: any) {
   return new EdgeLayer({
@@ -264,20 +226,6 @@ function getTooltip({ x, y, edgeId = -1, nodeId = -1, iconId = -1, sourceNodeId 
   if (nodeId !== -1) { return { x, y, style, text: `${nodeId}` }; }
   if (edgeId !== -1) { return { x, y, style, text: `${sourceNodeId}-${targetNodeId}` }; }
   return null;
-}
-
-function renderMessages() {
-  let handler: (_: any, state: RenderMessage) => void;
-  return Ix.ai.fromEventPattern<RenderMessage>(
-    (h) => {
-      handler = (_, state: RenderMessage) => h(state);
-      ipcRenderer.addListener('render', handler);
-    },
-    (_) => {
-      ipcRenderer.removeListener('render', handler);
-      handler = null;
-    }
-  );
 }
 
 function centerOnBbox([minX, maxX, minY, maxY]: [number, number, number, number], [parentWidth, parentHeight]: [number, number]) {

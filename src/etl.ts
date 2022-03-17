@@ -21,16 +21,18 @@ export function makeETLWorker() {
     if (code !== 0) { console.error(`Worker stopped with exit code ${code}`); }
   });
   const cursor = new MessageChannel();
+  const frames = new MessageChannel();
   const update = new MessageChannel();
   worker.once('online', () => {
     worker.postMessage(
-      {cursor: cursor.port1, update: update.port1},
-      [cursor.port1, update.port1],
+      {cursor: cursor.port1, frames: frames.port1, update: update.port1},
+      [cursor.port1, frames.port1, update.port1],
     );
   });
   return {
     worker,
     cursor,
+    frames,
     update,
   };
 }

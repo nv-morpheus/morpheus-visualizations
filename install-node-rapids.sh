@@ -10,20 +10,12 @@ docker pull ghcr.io/rapidsai/node:22.02.00-devel-node16.13.2-cuda11.6.0-ubuntu20
 docker run --rm -w /opt/rapids -v "$PWD/rapidsai:/out" \
     ghcr.io/rapidsai/node:22.02.00-devel-node16.13.2-cuda11.6.0-ubuntu20.04-packages \
     bash -c "cp \
-             wrtc-0.4.7-dev.tgz \
-             rapidsai-core-*.tgz \
-             rapidsai-cuda-*.tgz \
-             rapidsai-glfw-*.tgz \
-             rapidsai-webgl-*.tgz \
-             rapidsai-rmm-*.tgz \
-             rapidsai-cudf-*.tgz \
-             rapidsai-sql-*.tgz \
-             rapidsai-cuml-*.tgz \
-             rapidsai-cugraph-*.tgz \
-             rapidsai-cuspatial-*.tgz \
-             rapidsai-io-*.tgz \
-             rapidsai-deck.gl-*.tgz \
-             rapidsai-jsdom-*.tgz \
+             rapidsai-core-0.0.1.tgz \
+             rapidsai-cuda-0.0.1.tgz \
+             rapidsai-rmm-0.0.1.tgz \
+             rapidsai-cudf-0.0.1.tgz \
+             rapidsai-cuml-0.0.1.tgz \
+             rapidsai-cugraph-0.0.1.tgz \
              /out/"
 
 chown $(id -u):$(id -g) rapidsai/*.tgz

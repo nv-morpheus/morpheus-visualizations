@@ -23,13 +23,14 @@ import {getTextureSize, TextureFormats} from '../types';
 import {HostBuffers, LayoutParams, ShapedEdges, ShapedIcons, ShapedNodes} from '../types';
 
 export function layout(dataSource: AsyncIterable<{
+                         index: number,
                          kind: 'replace' | 'append',
                          nodes: Uint8Array,
                          edges: Uint8Array,
                          icons: Uint8Array,
                        }>,
                        layoutParams: AsyncIterable<LayoutParams>) {
-  const params = Ix.ai.whileDo(Ix.ai.of(0), () => new Promise((r) => setTimeout(r, 0, true)))
+  const params = Ix.ai.whileDo(Ix.ai.of(0), () => new Promise((r) => setTimeout(r, 10, true)))
                    .pipe(Ix.ai.ops.withLatestFrom(layoutParams))
                    .pipe(Ix.ai.ops.map(([, params]) => params));
 
@@ -42,6 +43,7 @@ export function layout(dataSource: AsyncIterable<{
       // edges,
       icons,
       kind: update.kind,
+      index: update.index,
       hostBuffers: new DataFrameHostBuffers(nodes, edges, icons),
       graph: new (DedupedEdgesGraph as any)(
                nodes.select(['id']).assign({node: nodes.get('id')}),
@@ -56,34 +58,42 @@ export function layout(dataSource: AsyncIterable<{
                             .pipe(Ix.ai.ops.withLatestFrom(graphs))
                             .pipe(Ix.ai.ops.map(([params, data]) => ({params, data})));
 
-  const layoutScanSeed = {
+  const layoutScanSeed: LayoutMemo = {
     time: 0,
+    index: 0,
+    kind: 'replace',
     bbox: [NaN, NaN, NaN, NaN],
     hostBuffers: new HostBuffers(),
     positions: undefined as Float32Buffer,
-    // nodes: undefined as DataFrame<ShapedNodes>,
-    // edges: undefined as DataFrame<ShapedEdges>,
     icons: undefined as DataFrame<ShapedIcons>,
     graph: undefined as DedupedEdgesGraph<Int32>,
   };
 
   return paramsAndGraphs  //
     .pipe(Ix.ai.ops.scan({seed: layoutScanSeed, callback: layoutScanSelector}))
-    .pipe(Ix.ai.ops.map(({bbox, hostBuffers}) => ({bbox, ...hostBuffers})));
+    .pipe(Ix.ai.ops.map(({bbox, index, hostBuffers}) => ({
+                          bbox,
+                          index,
+                          ...hostBuffers,
+                        })));
 }
 
-interface LayoutMemo {
-  time: number;
+interface LayoutData {
+  index: number;
   kind: 'replace'|'append';
-  positions: Float32Buffer;
-  hostBuffers: HostBuffers;
   icons: DataFrame<ShapedIcons>;
   graph: DedupedEdgesGraph<Int32>;
+  hostBuffers: HostBuffers;
+}
+
+interface LayoutMemo extends LayoutData {
+  time: number;
+  positions: Float32Buffer;
   bbox: [number, number, number, number];
 }
 
 interface LayoutEvent {
-  data: LayoutMemo;
+  data: LayoutData;
   params: LayoutParams;
 }
 
@@ -160,6 +170,8 @@ function layoutScanSelector(memo: LayoutMemo, {params, data}: LayoutEvent) {
 
   memo.time      = performance.now();
   memo.positions = positions;
+
+  memo.index = data.index;
 
   Object.assign(memo.hostBuffers.node, data.hostBuffers.node);
   Object.assign(memo.hostBuffers.edge, data.hostBuffers.edge);

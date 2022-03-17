@@ -14,7 +14,7 @@
 
 import {Float32, Int32, Uint32, Uint64, Uint8} from '@rapidsai/cudf';
 
-export type DataCursor = 'prev'|'next'|'play'|'stop';
+export type DataCursor = number|'prev'|'next'|'play'|'stop';
 
 export class HostBuffers {
   public edge: {
@@ -44,14 +44,38 @@ export class HostBuffers {
     icon?: Partial<HostBuffers['icon']>
     node?: Partial<HostBuffers['node']>
   } = {}) {
-    this.edge = <any>Object.assign(this.edge || {}, opts.edge || {});
-    this.icon = <any>Object.assign(this.icon || {}, opts.icon || {});
-    this.node = <any>Object.assign(this.node || {}, opts.node || {});
+    this.edge = <any>Object.assign({
+      changed: false,
+      id: new Int32Array(),
+      edge: new BigUint64Array(),
+      color: new BigUint64Array(),
+      bundle: new BigUint64Array()
+    },
+                                   opts.edge || {});
+    this.icon = <any>Object.assign({
+      changed: false,
+      id: new Int32Array(),
+      age: new Float32Array(),
+      icon: new Int32Array(),
+      edge: new Int32Array(),
+    },
+                                   opts.icon || {});
+    this.node = <any>Object.assign({
+      changed: false,
+      id: new Int32Array(),
+      color: new Uint32Array(),
+      radius: new Uint8Array(),
+      xPosition: new Float32Array(),
+      yPosition: new Float32Array(),
+    },
+                                   opts.node || {});
   }
 }
 
 export interface RenderMessage extends HostBuffers {
-  bbox: [number, number, number, number],
+  index: number;
+  count: number;
+  bbox: [number, number, number, number];
 }
 
 export type PreshapedEdges = {

@@ -24,6 +24,7 @@ import {makeDataSource} from './socket';
 
 interface MainProcessChannels {
   cursor: MessagePort;
+  frames: MessagePort;
   update: MessagePort;
 }
 
@@ -33,6 +34,7 @@ class Update {
   constructor(
     public data: Uint8Array,
     public kind: 'append'|'replace',
+    public index: number,
   ) {}
 }
 
@@ -49,7 +51,11 @@ fromEvent<MainProcessChannels>(parentPort, 'message')
       );
     });
 
-    const dataSource = makeDataSource().pipe(Ix.ai.ops.throttle(rateLimit));
+    const dataSource = makeDataSource()  //
+                         .pipe(Ix.ai.ops.throttle(10))
+                         .pipe(Ix.ai.ops.tap((buffer) => {  //
+                           channels.frames.postMessage({count: buffer.length});
+                         }));
 
     return Ix.ai.merge(userCursor, autoCursor)
       .pipe(Ix.ai.ops.combineLatestWith(dataSource))
@@ -59,13 +65,13 @@ fromEvent<MainProcessChannels>(parentPort, 'message')
         comparer: (x, y) => !(x.kind === 'replace' || x.data !== y.data),
       }))
       .pipe(Ix.ai.ops.scan({seed: shaperSeed(), callback: shaperScanSelector}))
-      .pipe(Ix.ai.ops.map(({kind, shaped}) => ({channels, kind, shaped})));
+      .pipe(Ix.ai.ops.map((update) => ({channels, ...update})));
   }))
-  .forEach(({channels, kind, shaped}) => {
+  .forEach(({channels, shaped, kind, index}) => {
     const nodes = shaped.nodes.toArrow().serialize();
     const edges = shaped.edges.toArrow().serialize();
     const icons = shaped.icons.toArrow().serialize();
-    channels.update.postMessage({kind, nodes, edges, icons},
+    channels.update.postMessage({kind, index, nodes, edges, icons},
                                 [nodes.buffer, edges.buffer, icons.buffer]);
   })
   .catch((err) => { console.error('thread error:', err); });
@@ -75,48 +81,78 @@ function fromEvent<T>(port: MessagePort, type: string) {
 }
 
 function makeCursorScanSelector(autoSink: Ix.AsyncSink<DataCursor>) {
-  return function cursorScanSelector({index}: ReturnType<typeof cursorSeed>,
+  return function cursorScanSelector(memo: ReturnType<typeof cursorSeed>,
                                      [cursor, buffer]: [DataCursor, Uint8Array[]]) {
-    const prev  = Math.max(index - 1, 0);
-    const next  = Math.min(index + 1, buffer.length - 1);
-    let updates = Ix.ai.never() as AsyncIterableX<Update>;
+    const curr   = memo.index;
+    const last   = buffer.length - 1;
+    const prev   = Math.max(curr - 1, 0);
+    const next   = Math.min(curr + 1, last);
+    memo.updates = Ix.ai.never() as AsyncIterableX<Update>;
     switch (cursor) {
+      case 'stop': break;
       case 'prev':
-        updates = Ix.ai.of(new Update(buffer[index = prev], 'replace'))
-                    .pipe(Ix.ai.ops.tap(() => autoSink.write('stop')));
+        memo.index   = prev;
+        memo.updates = Ix.ai
+                         .of(new Update(buffer[prev], 'replace', prev))  //
+                         .pipe(Ix.ai.ops.tap(() => autoSink.write('stop')));
         break;
       case 'next':
-        updates = Ix.ai.of(new Update(buffer[index = next], 'append'))
-                    .pipe(Ix.ai.ops.tap(() => autoSink.write('stop')));
+        memo.index   = next;
+        memo.updates = Ix.ai
+                         .of(new Update(buffer[next], 'append', next))  //
+                         .pipe(Ix.ai.ops.tap(() => autoSink.write('stop')));
         break;
       case 'play':
-        if (index < next) {
-          updates = Ix.ai.of(new Update(buffer[index = next], 'append'))
-                      .pipe(Ix.ai.ops.map(async (update, _, signal) => {
-                        await Ix.ai.sleep(rateLimit, signal);
-                        autoSink.write('play');
-                        return update;
-                      }));
+        if (curr < next) {
+          memo.index   = next;
+          memo.updates = Ix.ai.of(new Update(buffer[next], 'append', next))
+                           .pipe(Ix.ai.ops.concatWith(Ix.ai.defer(async (signal) => {
+                             await Ix.ai.sleep(rateLimit, signal);
+                             autoSink.write('play');
+                             return Ix.ai.never();
+                           })));
+        }
+        break;
+      default:
+        if (typeof cursor === 'number') {
+          cursor       = Math.max(0, Math.min(last, cursor));
+          memo.index   = cursor;
+          memo.updates = Ix.ai.of(new Update(buffer[cursor], 'replace', cursor))
+                           .pipe(Ix.ai.ops.tap(() => autoSink.write('stop')));
+          // if (cursor < curr) {
+          //     memo.index   = cursor;
+          //     memo.updates = Ix.ai.of(new Update(buffer[cursor], 'replace', cursor))
+          //                      .pipe(Ix.ai.ops.tap(() => autoSink.write('stop')));
+          //   } else {
+          //     memo.updates =
+          //       Ix.ai.from(buffer.slice(curr, cursor))
+          //         .pipe(Ix.ai.ops.map((value, offset) => {
+          //           return new Update(value, 'append', memo.index = curr + offset);
+          //         }))
+          //         .pipe(Ix.ai.ops.tap({complete: () => autoSink.write('stop')}));
+          //   }
         }
         break;
     }
-    return {index, updates};
+    return memo;
   }
 }
 
 function cursorSeed() {
   return {
     index: 0,
-    updates: Ix.ai.of(new Update(new Uint8Array(), 'append')),
+    updates: Ix.ai.of(new Update(new Uint8Array(), 'append', 0)),
   };
 }
 
-function shaperScanSelector({oldEdges}: ReturnType<typeof shaperSeed>, {data, kind}: Update) {
+function shaperScanSelector({oldEdges}: ReturnType<typeof shaperSeed>,
+                            {kind, index, data}: Update) {
   const newEdges = DataFrame.fromArrow<PreshapedEdges>(data);
   const {oldEdges: oldEdges_, ...shaped} =
     kind === 'replace' ? shape(newEdges) : shape(oldEdges, oldEdges.concat(newEdges));
   return {
     kind,
+    index,
     shaped,
     oldEdges: oldEdges_,
   };
@@ -124,6 +160,7 @@ function shaperScanSelector({oldEdges}: ReturnType<typeof shaperSeed>, {data, ki
 
 function shaperSeed() {
   return {
+    index: 0,
     kind: 'replace',
     oldEdges: new DataFrame({
       src: Series.new(new Int32Array()),

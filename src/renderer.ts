@@ -26,6 +26,6 @@
  * ```
  */
 
-import './index.css';
+import './index.scss';
 // import './renderer/index.tsx';
 import './renderer2/index.tsx';

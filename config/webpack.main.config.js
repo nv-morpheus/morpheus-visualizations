@@ -1,5 +1,4 @@
-const rules     = require('./webpack.rules');
-const externals = require('./webpack.externals');
+const rules = require('./webpack.rules');
 
 module.exports = {
   /**
@@ -11,7 +10,6 @@ module.exports = {
   module: {
     rules,
   },
-  externals,
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
   },

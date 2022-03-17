@@ -20,15 +20,24 @@ const { ipcRenderer } = window.require('electron');
 
 import { Deck } from './deck';
 import { Controls } from './controls';
-import { DataCursor, LayoutParams } from '../types';
+import { loadIcons } from '../renderer/atlas';
+import { DataCursor, LayoutParams, RenderMessage } from '../types';
+import { RenderState } from '../renderer/types';
 
-interface AppProps {
+export interface AppProps {
   dataCursor: DataCursor;
   autoCenter: boolean;
   layoutParams: LayoutParams;
   setDataCursor: (cursor: DataCursor) => void;
   setAutoCenter: (autoCenter: boolean) => void;
   setLayoutParams: (layoutParams: LayoutParams) => void;
+}
+
+export interface RendererProps {
+  dataCursorIndex: number;
+  dataFramesCount: number;
+  renderState: RenderState;
+  setGLContext: (gl: WebGL2RenderingContext) => void;
 }
 
 const withAppProps = mapPropsStream<AppProps, {}>((props: any) => {
@@ -72,32 +81,94 @@ const withAppProps = mapPropsStream<AppProps, {}>((props: any) => {
     .pipe(Ix.ai.toObservable);
 });
 
+const withRenderState = mapPropsStream<AppProps & RendererProps, AppProps>((props) => {
+  const { handler: setGLContext, stream: glContexts } = createEventHandler();
 
-export const App = withAppProps(({
+  const props_ = Ix.ai.from<AppProps>(props as any);
+
+  const contexts_ = Ix.ai.from<WebGL2RenderingContext>(glContexts as any)
+    .pipe(Ix.ai.ops.startWith(null as WebGL2RenderingContext));
+
+  const messages_ = renderMessages().pipe(Ix.ai.ops.startWith(null as RenderMessage));
+
+  return Ix.ai
+    .combineLatest(props_, contexts_, messages_)
+    .pipe(Ix.ai.ops.scan({
+      seed: undefined as AppProps & RendererProps,
+      async callback({ renderState } = {} as any, [props, gl, renderMessage]) {
+        let dataCursorIndex = 0;
+        let dataFramesCount = 0;
+        if (renderMessage) {
+          dataCursorIndex = renderMessage.index;
+          dataFramesCount = renderMessage.count;
+          if (gl) {
+            renderState ??= new RenderState(gl.canvas, gl).copyIconAtlas(await loadIcons());
+            renderState = renderState.copyRenderMessage(renderMessage);
+          }
+        }
+        ipcRenderer.send('renderComplete', {});
+        if (typeof props.dataCursor === 'number') {
+          dataCursorIndex = props.dataCursor;
+        }
+
+        return {
+          ...props,
+          renderState,
+          setGLContext,
+          dataCursorIndex,
+          dataFramesCount,
+        };
+      }
+    }))
+    .pipe(Ix.ai.toObservable);
+});
+
+export const App = withAppProps(withRenderState(({
   dataCursor,
   autoCenter,
   layoutParams,
+  renderState,
+  setGLContext,
   setDataCursor,
   setAutoCenter,
   setLayoutParams,
-}: AppProps) => {
+  dataCursorIndex,
+  dataFramesCount,
+}) => {
   return (
-    <>
+    <div style={{ height: '100%', display: 'flex', alignItems: 'stretch', flexDirection: 'row', flexWrap: 'nowrap' }}>
       <Controls
+        style={{ backgroundColor: 'transparent', zIndex: 2, minWidth: 320 }}
         dataCursor={dataCursor}
         autoCenter={autoCenter}
         layoutParams={layoutParams}
-        style={{ width: '30%', position: 'absolute' }}
         setDataCursor={setDataCursor}
         setAutoCenter={setAutoCenter}
         setLayoutParams={setLayoutParams}
+        dataCursorIndex={dataCursorIndex}
+        dataFramesCount={dataFramesCount}
       />
-      <Deck
-        width='70%'
-        height='100%'
-        style={{ left: '30%' }}
-        autoCenter={autoCenter}
-        setAutoCenter={setAutoCenter} />
-    </>
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <Deck
+          autoCenter={autoCenter}
+          renderState={renderState}
+          setAutoCenter={setAutoCenter}
+          onWebGLInitialized={setGLContext} />
+      </div>
+    </div>
   );
-});
+}));
+
+function renderMessages() {
+  let handler: (_: any, state: RenderMessage) => void;
+  return Ix.ai.fromEventPattern<RenderMessage>(
+    (h) => {
+      handler = (_, state: RenderMessage) => h(state);
+      ipcRenderer.addListener('render', handler);
+    },
+    (_) => {
+      ipcRenderer.removeListener('render', handler);
+      handler = null;
+    }
+  );
+}

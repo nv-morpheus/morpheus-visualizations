@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css';
-
 import * as React from 'react';
 
 import { Accordion } from 'react-bootstrap';
-import { Row, Col, Form, InputGroup, FloatingLabel } from 'react-bootstrap';
-import { Button, ButtonGroup, ButtonToolbar } from 'react-bootstrap';
+import { Button, ButtonGroup } from 'react-bootstrap';
+import { Row, Col, Form, InputGroup } from 'react-bootstrap';
 import RangeSlider from 'react-bootstrap-range-slider';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -28,9 +25,11 @@ import { faBackward, faForward, faPlay, faPause } from '@fortawesome/free-solid-
 import { DataCursor, LayoutParams } from '../types';
 
 export interface ControlProps {
-  style: any;
-  dataCursor: DataCursor;
+  style?: any;
   autoCenter: boolean;
+  dataCursor: DataCursor;
+  dataCursorIndex: number;
+  dataFramesCount: number;
   layoutParams: LayoutParams;
   setDataCursor: (cursor: DataCursor) => void;
   setAutoCenter: (autoCenter: boolean) => void;
@@ -38,7 +37,7 @@ export interface ControlProps {
 }
 
 const color = 'white';
-const backgroundColor = 'rgba(0,0,0,0)';
+const backgroundColor = 'transparent';
 
 export const Controls = ({
   style,
@@ -48,6 +47,8 @@ export const Controls = ({
   setDataCursor,
   setAutoCenter,
   setLayoutParams,
+  dataCursorIndex,
+  dataFramesCount,
 }: ControlProps) => {
 
   const setLayoutParam = (key: keyof LayoutParams) => {
@@ -56,63 +57,58 @@ export const Controls = ({
     };
   };
 
+  const dataCursorPaused = dataCursor !== 'play' || dataCursorIndex >= dataFramesCount - 1;
+
   return (
-    <div style={{ width: 400, ...style }}>
-      <Row style={{ color, backgroundColor }}>
-        <Col sm={8}>
-          <Form.Floating id="floatingTimeSlider">
-            <label htmlFor="floatingTimeSlider"
-              style={{ padding: 0, marginTop: -10, width: '100%', textAlign: 'center' }}>
-              Time
-            </label>
-            <RangeSlider
-              size="sm"
-              min={0}
-              max={100}
-              step={1}
-              value={0}
-              tooltip="auto"
-              tooltipPlacement="bottom"
-              style={{ marginTop: 5, padding: 0 }}
-              tooltipStyle={{ pointerEvents: 'none' }}
-            // onChange={(ev) => onChange(Number(ev.target.value as any))}
-            />
-          </Form.Floating>
-        </Col>
-        <Col sm={4} style={{ paddingTop: 3 }}>
-          <ButtonGroup size="sm">
-            <Button
-              variant="outline-light"
-              onClick={() => setDataCursor('prev')}>
-              <FontAwesomeIcon icon={faBackward} />
-            </Button>
-            <Button
-              variant="outline-light"
-              onClick={() => setDataCursor('next')}>
-              <FontAwesomeIcon icon={faForward} />
-            </Button>
-          </ButtonGroup>
-          <div style={{ display: 'inline-block', width: '5px' }} />
+    <div style={{ color, backgroundColor, ...style }}>
+      <InputGroup style={{ color, backgroundColor, paddingLeft: 20 }}>
+        {/* <InputGroup.Text style={{ color, backgroundColor, border: 'none', paddingLeft: 0 }}>
+          Inference Batch
+        </InputGroup.Text> */}
+        <ButtonGroup size="sm" style={{ paddingTop: 3 }}>
+          <Button
+            variant="outline-light"
+            onClick={() => setDataCursor('prev')}>
+            <FontAwesomeIcon icon={faBackward} />
+          </Button>
+          <Button
+            variant="outline-light"
+            onClick={() => setDataCursor('next')}>
+            <FontAwesomeIcon icon={faForward} />
+          </Button>
           <Button
             size="sm"
             variant="outline-light"
             onClick={() => {
-              if (dataCursor === 'play') {
-                setDataCursor('stop');
-              } else {
-                setDataCursor('play');
+              if (dataCursorPaused) {
+                if (dataCursorIndex < dataFramesCount - 1) {
+                  setDataCursor('play');
+                }
                 if (!layoutParams.active) {
                   setLayoutParams(new LayoutParams({ ...layoutParams, active: true }));
                 }
+              } else {
+                setDataCursor('stop');
               }
             }}>
-            <FontAwesomeIcon icon={dataCursor === 'play' ? faPause : faPlay} />
-            {/* {' '} */}
-            {/* {dataCursor === 'play' ? "Pause" : "Play"} */}
+            <FontAwesomeIcon icon={dataCursorPaused ? faPlay : faPause} />
           </Button>
-        </Col>
-      </Row>
-      <Accordion style={{ color, backgroundColor }} flush={true}>
+        </ButtonGroup>
+        <InputGroup.Text style={{ color, backgroundColor, border: 'none', paddingRight: 0 }}>
+          Inference Batch ({dataCursorIndex + 1}/{Math.max(1, dataFramesCount)})
+        </InputGroup.Text>
+      </InputGroup>
+      <RangeSlider
+        size="sm"
+        min={1}
+        max={Math.max(1, dataFramesCount)}
+        step={1}
+        value={dataCursorIndex + 1}
+        tooltip="off"
+        style={{ padding: '3px 5px 0px 5px' }}
+        onChange={(ev) => setDataCursor(Number(ev.target.value as any) - 1)}
+      />
+      <Accordion style={{ color, backgroundColor }} flush={true} defaultActiveKey="0">
         <Accordion.Item style={{ color, backgroundColor }} eventKey="0">
           <Accordion.Button style={{ color, backgroundColor }}>
             Graph Layout Options
@@ -123,7 +119,7 @@ export const Controls = ({
                 label="Simulating"
                 checked={layoutParams.active}
                 onChange={(active) => {
-                  if (dataCursor === 'play') {
+                  if (!active && !dataCursorPaused) {
                     setDataCursor('stop');
                   }
                   setLayoutParams(new LayoutParams({ ...layoutParams, active }));

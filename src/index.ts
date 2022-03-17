@@ -69,6 +69,11 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) { createWindow(); }
 });
 
+// // In this file you can include the rest of your app's specific main process
+// // code. You can also put them in separate files and import them here.
+
+import {MessagePort} from 'worker_threads';
+
 import {initializeDefaultPoolMemoryResource} from './rmm';
 
 initializeDefaultPoolMemoryResource(
@@ -83,69 +88,51 @@ import {makeETLWorker} from './etl';
 import {layout} from './etl/layout';
 import * as Ix from './ix';
 
-import {DataCursor, LayoutParams} from './types';
+import {DataCursor, HostBuffers, LayoutParams} from './types';
 
 const dataCursors  = new Ix.AsyncSink<DataCursor>();
 const layoutParams = new Ix.AsyncSink<LayoutParams>();
 
-ipcMain.on('dataCursor', (_, xs) => {
-  // console.log(`ipcMain.on('dataCursor', '${xs}')`);
-  dataCursors.write(xs);
-});
-
-ipcMain.on('layoutParams', (_, xs) => {
-  // console.log(`ipcMain.on('layoutParams', ${JSON.stringify(xs)})`);
-  layoutParams.write(new LayoutParams(xs));
-});
+ipcMain.on('dataCursor', (_, xs) => { dataCursors.write(xs); });
+ipcMain.on('layoutParams', (_, xs) => { layoutParams.write(new LayoutParams(xs)); });
 
 function onDOMReady(mainWindow: BrowserWindow) {
-  const {worker, cursor, update} = makeETLWorker();
+  const {worker, cursor, frames, update} = makeETLWorker();
 
   worker.once('online', () => {
     Ix.ai.from(dataCursors).forEach((xs) => cursor.port2.postMessage(xs));
 
-    const updates = Ix.ai.fromEventPattern<
-      {kind: 'replace' | 'append', nodes: Uint8Array, edges: Uint8Array, icons: Uint8Array}>(
-      (h) => update.port2.on('message', h), (h) => update.port2.off('message', h));
+    const updates = fromMessagePortEvent<{
+      index: number,
+      kind: 'replace' | 'append',
+      nodes: Uint8Array,
+      edges: Uint8Array,
+      icons: Uint8Array
+    }>(update.port2, 'message');
 
-    layout(updates, layoutParams)
-      .forEach(async ({edge, icon, node, bbox}) => {
+    const layoutUpdates =
+      layout(updates, layoutParams)
+        .pipe(Ix.ai.ops.startWith(
+          {index: 0, kind: 'replace', bbox: [NaN, NaN, NaN, NaN], ...new HostBuffers()}));
+
+    const frameCounts = fromMessagePortEvent<{count: number}>(frames.port2, 'message')
+                          .pipe(Ix.ai.ops.startWith({count: 0} as {count: number}));
+
+    layoutUpdates.pipe(Ix.ai.ops.combineLatestWith(frameCounts))
+      .forEach(async ([{index, edge, icon, node, bbox}, {count}]) => {
         const done = new Promise((r) => ipcMain.once('renderComplete', r));
-        mainWindow.webContents.send('render', {edge, icon, node, bbox});
+        mainWindow.webContents.send('render', {edge, icon, node, bbox, index, count});
         await done;
       })
       .catch((e) => { console.error('layout error', e); });
   });
 }
 
-// // In this file you can include the rest of your app's specific main process
-// // code. You can also put them in separate files and import them here.
-// import {ipcMain} from 'electron';
-// import { AsyncSink } from 'ix/Ix.node';
-// import { LayoutParams } from './types';
-// import { shape } from './main/etl/shape';
-// import { layout } from './main/etl/layout';
-// import { dataSource } from './main/etl/socket-source';
+function fromMessagePortEvent<T>(port: MessagePort, type: string) {
+  return Ix.ai.fromEventPattern<T>((h) => port.on(type, h), (h) => port.off(type, h));
+}
 
-// function onDOMReady(mainWindow: BrowserWindow) {
-//   workerTest();
-//   (async () => {
-//     const { prev, next, inputs } = inputSource();
-//     const shaped = shape(dataSource(prev, next));
-//     for await (const x of layout(shaped, inputs)) {
-//       const done = new Promise((r) => ipcMain.once('renderComplete', r));
-//       mainWindow.webContents.send('render', x);
-//       await done;
-//     }
-//   })().then(() => { }, (e) => { console.error(e); throw e; });
-// }
-
-// function inputSource() {
-//   const prev = new AsyncSink<void>();
-//   const next = new AsyncSink<void>();
-//   const inputs = new AsyncSink<LayoutParams>();
-//   ipcMain.on('prev', (event) => { prev.write(undefined); });
-//   ipcMain.on('next', (event) => { next.write(undefined); });
-//   ipcMain.on('layoutParams', (event, params) => { inputs.write(params); });
-//   return { prev, next, inputs };
-// }
+require('@rapidsai/rmm/build/Release/node_rmm.node');
+require('@rapidsai/cuda/build/Release/node_cuda.node');
+require('@rapidsai/cudf/build/Release/node_cudf.node');
+require('@rapidsai/cugraph/build/Release/node_cugraph.node');
