@@ -15,6 +15,7 @@
 import {DataFrame, Series} from '@rapidsai/cudf';
 import {AsyncIterableX} from 'ix/asynciterable';
 import {MessagePort, parentPort} from 'worker_threads';
+import * as arrow from 'apache-arrow';
 
 import * as Ix from '../ix';
 import {DataCursor, PreshapedEdges} from '../types';
@@ -68,9 +69,9 @@ fromEvent<MainProcessChannels>(parentPort, 'message')
       .pipe(Ix.ai.ops.map((update) => ({channels, ...update})));
   }))
   .forEach(({channels, shaped, kind, index}) => {
-    const nodes = shaped.nodes.toArrow().serialize();
-    const edges = shaped.edges.toArrow().serialize();
-    const icons = shaped.icons.toArrow().serialize();
+    const nodes = arrow.tableToIPC(shaped.nodes.toArrow());
+    const edges = arrow.tableToIPC(shaped.edges.toArrow());
+    const icons = arrow.tableToIPC(shaped.icons.toArrow());
     channels.update.postMessage({kind, index, nodes, edges, icons},
                                 [nodes.buffer, edges.buffer, icons.buffer]);
   })

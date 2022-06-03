@@ -158,10 +158,10 @@ function layoutScanSelector(memo: LayoutMemo, {params, data}: LayoutEvent) {
     if (data.hostBuffers.icon.changed) {
       // Copy the icon buffers to host
       const table                = icons.toArrow();
-      data.hostBuffers.icon.id   = table.getColumn('id').toArray();
-      data.hostBuffers.icon.age  = table.getColumn('age').toArray();
-      data.hostBuffers.icon.icon = table.getColumn('icon').toArray();
-      data.hostBuffers.icon.edge = table.getColumn('edge').toArray();
+      data.hostBuffers.icon.id   = table.getChild('id').toArray();
+      data.hostBuffers.icon.age  = table.getChild('age').toArray();
+      data.hostBuffers.icon.icon = table.getChild('icon').toArray();
+      data.hostBuffers.icon.edge = table.getChild('edge').toArray();
     }
   }, [memo.icons]);
 

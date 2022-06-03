@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { DataFrame, Series, Uint32, Int32 } from '@rapidsai/cudf';
+import * as arrow from 'apache-arrow';
 
 class Message {
   constructor(
@@ -43,7 +44,7 @@ export async function* testDataSource() {
       type = 'append';
       edge = makeEdgesUpdateComplex(numEdges);
     }
-    yield new Message(type, edge.toArrow().serialize());
+    yield new Message(type, arrow.tableToIPC(edge.toArrow()));
     if (simple) {
       await new Promise((r) => setTimeout(r, delay));
     } else {
