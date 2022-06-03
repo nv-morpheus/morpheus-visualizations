@@ -22,16 +22,4 @@ docker run --rm -w /opt/rapids -v "$PWD/rapidsai:/out" \
 
 chown $(id -u):$(id -g) rapidsai/*.tgz
 
-cd rapidsai
-
-npm init --yes
-npm install --save --save-exact cmake-js@6.0.0
-npm install \
-    --save --prod \
-    --legacy-peer-deps --force \
-    --omit dev --omit peer --omit optional \
-    *.tgz
-
-rm package.json *.tgz
-
 cd - 2>&1>/dev/null

@@ -25,6 +25,7 @@ module.exports = {
   },
   plugins,
   resolve: {
+    mainFields: ['main', 'module'],
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css'],
   },
 };

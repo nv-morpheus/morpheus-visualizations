@@ -17,7 +17,7 @@ import {Accessor} from '@luma.gl/webgl';
 import {getTextureSize, RenderMessage, TextureFormats} from '../types';
 
 import {IconAtlas} from './atlas';
-import {Buffer, copyDtoH, Texture2D} from './luma.gl';
+import {Buffer, Texture2D} from './luma.gl';
 
 export class DeviceBuffers {
   public edge: {

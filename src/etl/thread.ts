@@ -15,10 +15,10 @@
 import {DataFrame, Series} from '@rapidsai/cudf';
 import {AsyncIterableX} from 'ix/asynciterable';
 import {MessagePort, parentPort} from 'worker_threads';
-import * as arrow from 'apache-arrow';
 
 import * as Ix from '../ix';
 import {DataCursor, PreshapedEdges} from '../types';
+import {dfToArrowIPC} from '../utils';
 
 import {shape} from './shape';
 import {makeDataSource} from './socket';
@@ -69,9 +69,9 @@ fromEvent<MainProcessChannels>(parentPort, 'message')
       .pipe(Ix.ai.ops.map((update) => ({channels, ...update})));
   }))
   .forEach(({channels, shaped, kind, index}) => {
-    const nodes = arrow.tableToIPC(shaped.nodes.toArrow());
-    const edges = arrow.tableToIPC(shaped.edges.toArrow());
-    const icons = arrow.tableToIPC(shaped.icons.toArrow());
+    const nodes = dfToArrowIPC(shaped.nodes);
+    const edges = dfToArrowIPC(shaped.edges);
+    const icons = dfToArrowIPC(shaped.icons);
     channels.update.postMessage({kind, index, nodes, edges, icons},
                                 [nodes.buffer, edges.buffer, icons.buffer]);
   })
@@ -120,18 +120,6 @@ function makeCursorScanSelector(autoSink: Ix.AsyncSink<DataCursor>) {
           memo.index   = cursor;
           memo.updates = Ix.ai.of(new Update(buffer[cursor], 'replace', cursor))
                            .pipe(Ix.ai.ops.tap(() => autoSink.write('stop')));
-          // if (cursor < curr) {
-          //     memo.index   = cursor;
-          //     memo.updates = Ix.ai.of(new Update(buffer[cursor], 'replace', cursor))
-          //                      .pipe(Ix.ai.ops.tap(() => autoSink.write('stop')));
-          //   } else {
-          //     memo.updates =
-          //       Ix.ai.from(buffer.slice(curr, cursor))
-          //         .pipe(Ix.ai.ops.map((value, offset) => {
-          //           return new Update(value, 'append', memo.index = curr + offset);
-          //         }))
-          //         .pipe(Ix.ai.ops.tap({complete: () => autoSink.write('stop')}));
-          //   }
         }
         break;
     }

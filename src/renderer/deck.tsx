@@ -12,20 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as Ix from '../ix';
 import * as React from 'react';
 
 // @ts-expect-error
 import DeckGL from '@deck.gl/react';
 // @ts-expect-error
 import { OrthographicView } from '@deck.gl/core';
-import { mapPropsStream, createEventHandler } from 'recompose';
 
-import { RenderState } from '../renderer/types';
-import { loadIcons } from '../renderer/atlas';
-import { EdgeLayer } from '../renderer/deck/layers/edges';
-import { NodeLayer } from '../renderer/deck/layers/nodes';
-import { IconLayer } from '../renderer/deck/layers/icons';
+import { RenderState } from './types';
+import { EdgeLayer } from './deck/layers/edges';
+import { NodeLayer } from './deck/layers/nodes';
+import { IconLayer } from './deck/layers/icons';
 
 interface DeckProps {
   style?: any;
