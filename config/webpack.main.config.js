@@ -11,6 +11,7 @@ module.exports = {
     rules,
   },
   resolve: {
+    mainFields: ['main', 'module'],
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
   },
 };

@@ -1,3 +1,5 @@
+# Run these in the "morpheus" repo dir
+
 # Start triton:
 docker run --rm -it --gpus=1 \
   -p8000:8000 \
