@@ -12,209 +12,163 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @ts-expect-error
-import { log as lumaLog } from '@luma.gl/core';
-// @ts-expect-error
-import { log as deckLog } from '@deck.gl/core';
+import * as Ix from '../ix';
+import * as React from 'react';
+import { mapPropsStream, createEventHandler } from 'recompose';
 
-import '@luma.gl/debug';
+const { ipcRenderer } = window.require('electron');
 
-const debug = !true;
-deckLog.level = 0;
-lumaLog.level = 0;
-deckLog.enable(debug || true);
-lumaLog.enable(debug || true);
-
-// @ts-expect-error
-import { Deck, OrthographicView } from '@deck.gl/core';
-
-import { NodeLayer } from './deck/layers/nodes';
-import { EdgeLayer } from './deck/layers/edges';
-import { IconLayer } from './deck/layers/icons';
+import { Deck } from './deck';
+import { loadIcons } from './atlas';
+import { Controls } from './controls';
 import { RenderState } from './types';
+import { DataCursor, LayoutParams, RenderMessage } from '../types';
 
-export type AppState = {
+export interface AppProps {
+  dataCursor: DataCursor;
   autoCenter: boolean;
-  deck: Deck;
-  gl: WebGL2RenderingContext;
-};
-
-
-export function init() {
-  return new Promise<AppState>((resolve) => {
-    const state = {
-      autoCenter: true,
-      deck: new Deck({
-        debug,
-        width: '100%',
-        height: '100%',
-        views: new OrthographicView(),
-        controller: { keyboard: false },
-        initialViewState: { target: [0, 0, 0], zoom: 0 },
-        onWebGLInitialized(gl: WebGL2RenderingContext) {
-          resolve({ ...state, gl });
-        },
-        onHover({ edgeId = -1, nodeId = -1, iconId = -1, sourceNodeId = -1, targetNodeId = -1, iconLevel = -1 }: any) {
-          state.deck.setProps({
-            highlightedIcon: iconId,
-            highlightedEdge: edgeId,
-            highlightedNode: nodeId,
-            highlightedSourceNode: sourceNodeId,
-            highlightedTargetNode: targetNodeId,
-          });
-        },
-        getTooltip({ edgeId = -1, nodeId = -1, iconId = -1, sourceNodeId = -1, targetNodeId = -1, iconLevel = -1 }: any) {
-          const style: any = {
-            'color': '#a0a7b4',
-            'padding': '2px',
-            'margin-top': '-6px',
-            'margin-left': '12px',
-            'background-color': 'rgba(26, 25, 24, 0.65)',
-          };
-          if (iconId !== -1) {
-            if (iconLevel === 1) {
-              style['background-color'] = 'rgba(204, 0, 0, 0.65)';
-            } else {
-              style['color'] = 'rgba(0, 0, 0, 0.65)';
-              style['background-color'] = 'rgba(255, 255, 255, 0.65)';
-            }
-            return { style, text: `${iconId}` };
-          }
-          if (nodeId !== -1) { return { style, text: `${nodeId}` }; }
-          if (edgeId !== -1) { return { style, text: `${sourceNodeId}-${targetNodeId}` }; }
-          return null;
-        }
-      }),
-    };
-  });
+  layoutParams: LayoutParams;
+  setDataCursor: (cursor: DataCursor) => void;
+  setAutoCenter: (autoCenter: boolean) => void;
+  setLayoutParams: (layoutParams: LayoutParams) => void;
 }
 
-export async function update(
-  app: AppState,
-  {
-    bbox,
-    node,
-    edge,
-    icon,
-    iconAtlas,
-    iconAtlasFrame,
-    iconAtlasOffset
-  }: RenderState
-) {
-  let { deck, autoCenter } = app;
-  const textures = {
-    edgeTex: edge.edgeTex,
-    bundleTex: edge.bundleTex,
-    xPositionTex: node.xPositionTex,
-    yPositionTex: node.yPositionTex,
-  };
-  const highlights = {
-    highlightedNode: deck.props.highlightedNode ?? -1,
-    highlightedEdge: deck.props.highlightedEdge ?? -1,
-    highlightedSourceNode: deck.props.highlightedSourceNode ?? -1,
-    highlightedTargetNode: deck.props.highlightedTargetNode ?? -1,
-  };
-  deck.setProps({
-    onViewStateChange() { app.autoCenter = false; },
-    initialViewState: autoCenter && centerOnBbox(bbox),
-    layers: [
-      new EdgeLayer({
-        pickable: true,
-        autoHighlight: false,
-        highlightColor: [225, 225, 225, 100],
-        numInstances: edge.length,
-        width: 2,
-        opacity: .2,
-        visible: true,
-        ...textures,
-        ...highlights,
-        data: {
-          attributes: {
-            instanceId: { buffer: edge.id },
-            instanceEdge: { buffer: edge.edge },
-            instanceBundle: { buffer: edge.bundle },
-            instanceSourceColor: { buffer: edge.color, offset: 0 },
-            instanceTargetColor: { buffer: edge.color, offset: 4 },
-          }
-        },
-      }),
-
-      new NodeLayer({
-        pickable: true,
-        autoHighlight: false,
-        highlightColor: [225, 225, 225, 100],
-        numInstances: node.length,
-        filled: true,
-        stroked: true,
-        visible: true,
-        fillOpacity: 0.5,
-        strokeOpacity: .9,
-        radiusScale: 1 / 75,
-        radiusMinPixels: 5,
-        radiusMaxPixels: 150,
-        ...textures,
-        ...highlights,
-        data: {
-          attributes: {
-            instanceId: { buffer: node.id },
-            instanceRadius: { buffer: node.radius },
-            instanceFillColor: { buffer: node.color },
-            instanceLineColor: { buffer: node.color },
-          }
-        },
-      }),
-
-      new IconLayer({
-        pickable: true,
-        billboard: true,
-        autoHighlight: true,
-        numInstances: icon.length,
-        highlightColor: [225, 225, 225, 100],
-        sizeUnits: 'pixels',
-        opacity: 1,
-        visible: true,
-        sizeScale: 12.5,
-        sizeMinPixels: 7,
-        sizeMaxPixels: 150,
-        iconMapping: undefined as any,
-        iconAtlas,
-        iconAtlasFrame,
-        iconAtlasOffset,
-        ...textures,
-        data: {
-          attributes: {
-            instanceId: { buffer: icon.id },
-            instanceAge: { buffer: icon.age },
-            instanceEdge: { buffer: icon.edge },
-            instanceIcon: { buffer: icon.icon },
-          }
-        }
-      }),
-    ],
-  });
-  await deck.animationLoop.waitForRender();
-  return app;
+export interface RendererProps {
+  dataCursorIndex: number;
+  dataFramesCount: number;
+  renderState: RenderState;
+  setGLContext: (gl: WebGL2RenderingContext) => void;
 }
 
-function centerOnBbox([minX, maxX, minY, maxY]: [number, number, number, number]) {
-  const width = Math.max(maxX - minX, 1);
-  const height = Math.max(maxY - minY, 1);
-  if ((width === width) && (height === height)) {
-    const { outerWidth, outerHeight } = window;
-    const world = (width > height ? width : height);
-    const screen = (width > height ? outerWidth : outerHeight) * .9;
-    const zoom = (world > screen ? -(world / screen) : (screen / world));
-    return {
-      minZoom: Number.NEGATIVE_INFINITY,
-      maxZoom: Number.POSITIVE_INFINITY,
-      zoom: Math.log(Math.abs(zoom)) * Math.sign(zoom),
-      target: [minX + (width * .5), minY + (height * .5), 0],
-    };
-  }
-  return {
-    zoom: 1,
-    target: [0, 0, 0],
-    minZoom: Number.NEGATIVE_INFINITY,
-    maxZoom: Number.POSITIVE_INFINITY,
-  };
+const withAppProps = mapPropsStream<AppProps, {}>((props: any) => {
+  const { handler: setDataCursor, stream: dataCursors } = createEventHandler();
+  const { handler: setAutoCenter, stream: autoCenters } = createEventHandler();
+  const { handler: setLayoutParams, stream: layoutParams } = createEventHandler();
+
+  const props_ = Ix.ai.from<{}>(props as any);
+
+  const dataCursors_ = Ix.ai
+    .from<DataCursor>(dataCursors as any)
+    .pipe(Ix.ai.ops.startWith('prev' as DataCursor))
+    .pipe(Ix.ai.ops.tap((dataCursor: DataCursor) => {
+      ipcRenderer.send('dataCursor', dataCursor);
+    }));
+
+  const autoCenters_ = Ix.ai
+    .from<boolean>(autoCenters as any)
+    .pipe(Ix.ai.ops.startWith(true as boolean));
+
+  const layoutParams_ = Ix.ai
+    .from<LayoutParams>(layoutParams as any)
+    .pipe(Ix.ai.ops.startWith(new LayoutParams({ active: true })))
+    .pipe(Ix.ai.ops.tap((layoutParams: LayoutParams) => {
+      ipcRenderer.send('layoutParams', layoutParams.toJSON());
+    }));
+
+  return Ix.ai
+    .combineLatest(props_, dataCursors_, autoCenters_, layoutParams_)
+    .pipe(Ix.ai.ops.map(([props, dataCursor, autoCenter, layoutParams]) => {
+      return {
+        ...props,
+        dataCursor,
+        autoCenter,
+        layoutParams,
+        setDataCursor,
+        setAutoCenter,
+        setLayoutParams,
+      };
+    }))
+    .pipe(Ix.ai.toObservable);
+});
+
+const withRenderState = mapPropsStream<AppProps & RendererProps, AppProps>((props) => {
+  const { handler: setGLContext, stream: glContexts } = createEventHandler();
+
+  const props_ = Ix.ai.from<AppProps>(props as any);
+
+  const contexts_ = Ix.ai.from<WebGL2RenderingContext>(glContexts as any)
+    .pipe(Ix.ai.ops.startWith(null as WebGL2RenderingContext));
+
+  const messages_ = renderMessages().pipe(Ix.ai.ops.startWith(null as RenderMessage));
+
+  return Ix.ai
+    .combineLatest(props_, contexts_, messages_)
+    .pipe(Ix.ai.ops.scan({
+      seed: undefined as AppProps & RendererProps,
+      async callback({ renderState } = {} as any, [props, gl, renderMessage]) {
+        let dataCursorIndex = 0;
+        let dataFramesCount = 0;
+        if (renderMessage) {
+          dataCursorIndex = renderMessage.index;
+          dataFramesCount = renderMessage.count;
+          if (gl) {
+            renderState ??= new RenderState(gl.canvas, gl).copyIconAtlas(await loadIcons());
+            renderState = renderState.copyRenderMessage(renderMessage);
+          }
+        }
+        ipcRenderer.send('renderComplete', {});
+        if (typeof props.dataCursor === 'number') {
+          dataCursorIndex = props.dataCursor;
+        }
+
+        return {
+          ...props,
+          renderState,
+          setGLContext,
+          dataCursorIndex,
+          dataFramesCount,
+        };
+      }
+    }))
+    .pipe(Ix.ai.toObservable);
+});
+
+export const App = withAppProps(withRenderState(({
+  dataCursor,
+  autoCenter,
+  layoutParams,
+  renderState,
+  setGLContext,
+  setDataCursor,
+  setAutoCenter,
+  setLayoutParams,
+  dataCursorIndex,
+  dataFramesCount,
+}) => {
+  return (
+    <div style={{ height: '100%', display: 'flex', alignItems: 'stretch', flexDirection: 'row', flexWrap: 'nowrap' }}>
+      <Controls
+        style={{ backgroundColor: 'transparent', zIndex: 2, minWidth: 320 }}
+        dataCursor={dataCursor}
+        autoCenter={autoCenter}
+        layoutParams={layoutParams}
+        setDataCursor={setDataCursor}
+        setAutoCenter={setAutoCenter}
+        setLayoutParams={setLayoutParams}
+        dataCursorIndex={dataCursorIndex}
+        dataFramesCount={dataFramesCount}
+      />
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <Deck
+          autoCenter={autoCenter}
+          renderState={renderState}
+          setAutoCenter={setAutoCenter}
+          onWebGLInitialized={setGLContext} />
+      </div>
+    </div>
+  );
+}));
+
+function renderMessages() {
+  let handler: (_: any, state: RenderMessage) => void;
+  return Ix.ai.fromEventPattern<RenderMessage>(
+    (h) => {
+      handler = (_, state: RenderMessage) => h(state);
+      ipcRenderer.addListener('render', handler);
+    },
+    (_) => {
+      ipcRenderer.removeListener('render', handler);
+      handler = null;
+    }
+  );
 }
