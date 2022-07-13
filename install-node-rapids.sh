@@ -2,15 +2,24 @@
 
 set -Eeo pipefail
 
-if [ -d "node_modules/@rapidsai" ]; then exit 0; fi
+if [ -d "node_modules/@rapidsai" ]; then
+    echo "Node modules are already built. Exiting setup..."
+    exit 0
+fi
 
+# Remove existing directories
 rm -rf rapidsai
 mkdir -p rapidsai
 
-docker pull ghcr.io/rapidsai/node:22.02.00-devel-node16.13.2-cuda11.6.0-ubuntu18.04-packages
+# Determine your ubuntu version
+UBUNTU_VERSION=$(sed -n 's/^VERSION_ID="\([0-9\.]*\)"$/\1/p' /etc/os-release)
+
+echo "Pulling ubuntu${UBUNTU_VERSION} containers..."
+
+docker pull ghcr.io/rapidsai/node:22.02.00-devel-node16.13.2-cuda11.6.0-ubuntu${UBUNTU_VERSION}-packages
 
 docker run --rm -w /opt/rapids -v "$PWD/rapidsai:/out" \
-    ghcr.io/rapidsai/node:22.02.00-devel-node16.13.2-cuda11.6.0-ubuntu18.04-packages \
+    ghcr.io/rapidsai/node:22.02.00-devel-node16.13.2-cuda11.6.0-ubuntu${UBUNTU_VERSION}-packages \
     bash -c "cp \
              rapidsai-core-0.0.1.tgz \
              rapidsai-cuda-0.0.1.tgz \
