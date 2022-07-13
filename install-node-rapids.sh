@@ -2,7 +2,7 @@
 
 set -Eeo pipefail
 
-if [ -d "rapidsai/node_modules/@rapidsai" ]; then exit 0; fi
+if [ -d "node_modules/@rapidsai" ]; then exit 0; fi
 
 rm -rf rapidsai
 mkdir -p rapidsai
