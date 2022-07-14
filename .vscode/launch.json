@@ -3,29 +3,55 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
+    "compounds": [
+        {
+            "name": "Electron: All",
+            "presentation": {
+                "hidden": false,
+                "group": "",
+                "order": 1
+            },
+            "configurations": [
+                "Electron: Main",
+                "Electron: Renderer"
+            ]
+        }
+    ],
     "configurations": [
         {
+            "type": "node",
+            "request": "launch",
+            "name": "Electron: Main",
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/node_modules/@electron-forge/cli/dist/electron-forge-start",
+            "env": {
+                "DEBUG": "1",
+            },
+            "args": [
+                // args to be passed directly to the Electron application
+                "--",
+                "--remote-debugging-port=9223",
+            ],
+            "presentation": { "hidden": true }
+        },
+        {
+            "name": "Electron: Renderer",
+            "type": "chrome",
+            "request": "attach",
+            "port": 9223,
+            "webRoot": "${workspaceFolder}",
+            "timeout": 30000,
+            "presentation": { "hidden": true }
+        },
+        {
+            "type": "node",
             "name": "Launch tmp.js",
             "program": "${workspaceFolder}/tmp.js",
             "request": "launch",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "type": "node"
+            "presentation": { "hidden": true }
         },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug Electron",
-            "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/node_modules/@electron-forge/cli/dist/electron-forge-start",
-            "env": { "DEBUG": "1", },
-            "args": [
-                "--vscode",
-                // args to be passed directly to the Electron application
-                // "--",
-                // ""
-            ],
-        }
     ]
 }
