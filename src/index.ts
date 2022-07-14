@@ -132,7 +132,8 @@ function fromMessagePortEvent<T>(port: MessagePort, type: string) {
   return Ix.ai.fromEventPattern<T>((h) => port.on(type, h), (h) => port.off(type, h));
 }
 
-require('@rapidsai/rmm/build/Release/node_rmm.node');
-require('@rapidsai/cuda/build/Release/node_cuda.node');
-require('@rapidsai/cudf/build/Release/node_cudf.node');
-require('@rapidsai/cugraph/build/Release/node_cugraph.node');
+// require('@rapidsai/core/build/Release/rapidsai_core.node');
+// require('@rapidsai/rmm/build/Release/rapidsai_rmm.node');
+// require('@rapidsai/cuda/build/Release/rapidsai_cuda.node');
+// require('@rapidsai/cudf/build/Release/rapidsai_cudf.node');
+// require('@rapidsai/cugraph/build/Release/rapidsai_cugraph.node');

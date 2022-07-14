@@ -60,12 +60,12 @@
     "@fortawesome/free-solid-svg-icons": "6.0.0",
     "@fortawesome/react-fontawesome": "0.1.17",
     "@loaders.gl/core": "3.1.6",
-    "@rapidsai/core": "file:./rapidsai/rapidsai-core-0.0.1.tgz",
-    "@rapidsai/cuda": "file:./rapidsai/rapidsai-cuda-0.0.1.tgz",
-    "@rapidsai/rmm": "file:./rapidsai/rapidsai-rmm-0.0.1.tgz",
-    "@rapidsai/cudf": "file:./rapidsai/rapidsai-cudf-0.0.1.tgz",
-    "@rapidsai/cuml": "file:./rapidsai/rapidsai-cuml-0.0.1.tgz",
-    "@rapidsai/cugraph": "file:./rapidsai/rapidsai-cugraph-0.0.1.tgz",
+    "@rapidsai/core": "file:./rapidsai/rapidsai-core-22.6.0.tgz",
+    "@rapidsai/cuda": "file:./rapidsai/rapidsai-cuda-22.6.0.tgz",
+    "@rapidsai/rmm": "file:./rapidsai/rapidsai-rmm-22.6.0.tgz",
+    "@rapidsai/cudf": "file:./rapidsai/rapidsai-cudf-22.6.0.tgz",
+    "@rapidsai/cuml": "file:./rapidsai/rapidsai-cuml-22.6.0.tgz",
+    "@rapidsai/cugraph": "file:./rapidsai/rapidsai-cugraph-22.6.0.tgz",
     "@types/react": "^17.0.38",
     "@types/react-dom": "^17.0.11",
     "@types/recompose": "0.30.10",
@@ -82,5 +82,8 @@
     "utf-8-validate": "5.0.9",
     "webpack": "^5.0.0",
     "ws": "8.5.0"
+  },
+  "overrides": {
+    "mjolnir.js": "2.6.0"
   }
 }
