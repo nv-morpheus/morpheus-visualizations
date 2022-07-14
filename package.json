@@ -82,5 +82,8 @@
     "utf-8-validate": "5.0.9",
     "webpack": "^5.0.0",
     "ws": "8.5.0"
+  },
+  "overrides": {
+    "mjolnir.js": "2.6.0"
   }
 }
