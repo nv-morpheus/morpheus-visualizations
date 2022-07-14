@@ -25,7 +25,8 @@
             "cwd": "${workspaceFolder}",
             "program": "${workspaceFolder}/node_modules/@electron-forge/cli/dist/electron-forge-start",
             "env": {
-                "DEBUG": "1",
+                "DEBUG": "true",
+                "LOG_RUN_TIMES": "false"
             },
             "args": [
                 // args to be passed directly to the Electron application

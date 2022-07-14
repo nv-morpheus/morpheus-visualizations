@@ -45,9 +45,6 @@ const createWindow = (): void => {
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-  // Open the DevTools.
-  if (!!process.env.DEBUG) { mainWindow.webContents.openDevTools(); }
-
   mainWindow.webContents.once('dom-ready', () => onDOMReady(mainWindow));
 };
 

@@ -16,11 +16,25 @@ import {DataFrame, DataType, ToArrowMetadata, TypeMap} from '@rapidsai/cudf';
 import * as arrow from 'apache-arrow';
 import {performance} from 'perf_hooks';
 
+const logRunTimes = (() => {
+  switch (process.env.LOG_RUN_TIMES) {
+    case '':
+    case '0':
+    case 'false':
+    case undefined: return false;
+    default: return true;
+  }
+})();
+
 export function logRuntime<F extends(...args: any[]) => any>(name: string, fn: F): ReturnType<F> {
-  const t = performance.now();
-  const r = fn();
-  if (!!process.env.DEBUG) { console.log(`${name}: ${(performance.now() - t).toFixed(1)}ms`); }
-  return r;
+  if (!logRunTimes) {
+    return fn();
+  } else {
+    const t = performance.now();
+    const r = fn();
+    console.log(`${name}: ${(performance.now() - t).toFixed(1)}ms`);
+    return r;
+  }
 }
 
 export function dfToArrowIPC<T extends TypeMap>(df: DataFrame<T>) {
