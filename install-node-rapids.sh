@@ -20,4 +20,4 @@ docker run --rm -w /opt/rapids -v "$PWD/rapidsai:/out" \
 
 # chown $(id -u):$(id -g) rapidsai/*.tgz
 
-cd - 2>&1>/dev/null
+# cd - 2>&1>/dev/null

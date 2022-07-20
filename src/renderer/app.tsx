@@ -49,10 +49,10 @@ const withAppProps = mapPropsStream<AppProps, {}>((props: any) => {
 
   const dataCursors_ = Ix.ai
     .from<DataCursor>(dataCursors as any)
-    .pipe(Ix.ai.ops.startWith('prev' as DataCursor))
     .pipe(Ix.ai.ops.tap((dataCursor: DataCursor) => {
       ipcRenderer.send('dataCursor', dataCursor);
-    }));
+    }))
+    .pipe(Ix.ai.ops.startWith('play' as DataCursor));
 
   const autoCenters_ = Ix.ai
     .from<boolean>(autoCenters as any)
@@ -60,10 +60,10 @@ const withAppProps = mapPropsStream<AppProps, {}>((props: any) => {
 
   const layoutParams_ = Ix.ai
     .from<LayoutParams>(layoutParams as any)
-    .pipe(Ix.ai.ops.startWith(new LayoutParams({ active: true })))
     .pipe(Ix.ai.ops.tap((layoutParams: LayoutParams) => {
       ipcRenderer.send('layoutParams', layoutParams.toJSON());
-    }));
+    }))
+    .pipe(Ix.ai.ops.startWith(new LayoutParams({ active: true })));
 
   return Ix.ai
     .combineLatest(props_, dataCursors_, autoCenters_, layoutParams_)

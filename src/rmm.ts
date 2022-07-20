@@ -1,15 +1,13 @@
-import { setDefaultAllocator } from '@rapidsai/cuda';
+import {setDefaultAllocator} from '@rapidsai/cuda';
 import {
   DeviceBuffer,
-  PoolMemoryResource,
   getCurrentDeviceResource,
+  PoolMemoryResource,
   setCurrentDeviceResource,
 } from '@rapidsai/rmm';
 
-export function initializeDefaultPoolMemoryResource(
-  initialPoolSize = 2 * (1024 ** 3), // 2GiB
-  maximumPoolSize = 4 * (1024 ** 3), // 4GiB
-) {
+export function initializeDefaultPoolMemoryResource(initialPoolSize?: number,
+                                                    maximumPoolSize?: number) {
   const mr = new PoolMemoryResource(
     getCurrentDeviceResource(),
     initialPoolSize,

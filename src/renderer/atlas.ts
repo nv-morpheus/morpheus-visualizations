@@ -13,48 +13,51 @@
 // limitations under the License.
 
 import {icon} from '@fortawesome/fontawesome-svg-core';
-import {
-  faCertificate,
-  faEnvelope,
-  faExclamationTriangle,
-  faImage,
-  faPaperPlane,
-  faVideo,
-} from '@fortawesome/free-solid-svg-icons';
+import {faCircle as level0Icon} from '@fortawesome/free-solid-svg-icons';
+// import { faEnvelope as level0Icon } from '@fortawesome/free-solid-svg-icons';
+// import { faPaperPlane as level0Icon } from '@fortawesome/free-solid-svg-icons';
+import {faExclamationTriangle as level1Icon} from '@fortawesome/free-solid-svg-icons';
+import {faImage as level2Icon} from '@fortawesome/free-solid-svg-icons';
+import {faVideo as level3Icon} from '@fortawesome/free-solid-svg-icons';
+import {faCertificate as level4Icon} from '@fortawesome/free-solid-svg-icons';
 
 export interface IconAtlas {
   atlas: ImageData;
   frame: Float32Array;
   offset: Float32Array;
 }
-;
 
 export async function loadIcons() {
   const iconWidth  = 25;
   const iconHeight = 25;
   const icons      = [
-    icon(faEnvelope,
-         // faPaperPlane,
-         {
-           styles: {
-             /* color: '#ffffbf', */ /* color: 'rgba(255, 255, 191, 0.25)' */
-             color: 'rgba(255, 255, 255, 0.25)'
-           },
-           transform: {size: 10}
-         }),
-    icon(faExclamationTriangle,
-         {styles: {/* color: '#d7191c', */ color: 'rgba(215, 25, 28, 0.75)'}}),
-    icon(faImage, {
+    icon(level0Icon, {
+      styles: {
+        /* color: '#ffffbf', */
+        /* color: 'rgba(255, 255, 191, 0.25)' */
+        color: 'rgba(255, 255, 255, 0.25)',
+      },
+      //  transform: {size: 5},
+      transform: {size: 10},
+    }),
+    icon(level1Icon, {
+      styles: {
+        /* color: '#d7191c', */
+        color: 'rgba(215, 25, 28, 0.75)',
+      },
+      transform: {size: 15},
+    }),
+    icon(level2Icon, {
       styles: {
         color: '#2b83ba',
       }
     }),
-    icon(faVideo, {
+    icon(level3Icon, {
       styles: {
         color: '#abdda4',
       }
     }),
-    icon(faCertificate, {
+    icon(level4Icon, {
       styles: {
         color: '#fdae61',
       }

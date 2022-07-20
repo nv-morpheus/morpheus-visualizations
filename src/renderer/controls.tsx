@@ -20,7 +20,7 @@ import { Row, Col, Form, InputGroup } from 'react-bootstrap';
 import RangeSlider from 'react-bootstrap-range-slider';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBackward, faForward, faPlay, faPause } from '@fortawesome/free-solid-svg-icons'
+import { faBackward, faForward, faPlay, faPause } from '@fortawesome/free-solid-svg-icons';
 
 import { DataCursor, LayoutParams } from '../types';
 
@@ -57,7 +57,8 @@ export const Controls = ({
     };
   };
 
-  const dataCursorPaused = dataCursor !== 'play' || dataCursorIndex >= dataFramesCount - 1;
+  const cursorAtEnd = dataCursorIndex === dataFramesCount - 1;
+  const dataCursorPaused = dataCursor !== 'play' || cursorAtEnd;
 
   return (
     <div style={{ color, backgroundColor, ...style }}>
@@ -68,34 +69,45 @@ export const Controls = ({
         <ButtonGroup size="sm" style={{ paddingTop: 3 }}>
           <Button
             variant="outline-light"
-            onClick={() => setDataCursor('prev')}>
+            onClick={() => { setDataCursor('prev'); setDataCursor('play'); }}>
             <FontAwesomeIcon icon={faBackward} />
           </Button>
           <Button
             variant="outline-light"
-            onClick={() => setDataCursor('next')}>
+            onClick={() => { setDataCursor('next'); setDataCursor('play'); }}>
             <FontAwesomeIcon icon={faForward} />
           </Button>
           <Button
             size="sm"
             variant="outline-light"
             onClick={() => {
-              if (dataCursorPaused) {
-                if (dataCursorIndex < dataFramesCount - 1) {
-                  setDataCursor('play');
-                }
-                if (!layoutParams.active) {
-                  setLayoutParams(new LayoutParams({ ...layoutParams, active: true }));
-                }
+              let active = false;
+              let cursors = [] as DataCursor[];
+              if (cursorAtEnd) {
+                active = true;
+                cursors[0] = 0;
+                cursors[1] = 'play';
+              } else if (dataCursorPaused) {
+                active = true;
+                // cursors[0] = 'play';
+                cursors[0] = dataCursorIndex;
+                cursors[1] = 'play';
               } else {
-                setDataCursor('stop');
+                active = false;
+                cursors[0] = 'stop';
+              }
+              cursors.forEach((x) => setDataCursor(x));
+              if (layoutParams.active !== active) {
+                setLayoutParams(new LayoutParams({ ...layoutParams, active }));
               }
             }}>
-            <FontAwesomeIcon icon={dataCursorPaused ? faPlay : faPause} />
+            <FontAwesomeIcon
+              icon={dataCursorPaused ? faPlay : faPause}
+              flip={dataCursorPaused && cursorAtEnd ? "horizontal" : undefined} />
           </Button>
         </ButtonGroup>
         <InputGroup.Text style={{ color, backgroundColor, border: 'none', paddingRight: 0 }}>
-          Inference Batch ({dataCursorIndex + 1}/{Math.max(1, dataFramesCount)})
+          Inference Batch ({dataFramesCount === 0 ? '0/0' : `${dataCursorIndex + 1}/${Math.max(1, dataFramesCount)}`})
         </InputGroup.Text>
       </InputGroup>
       <RangeSlider
@@ -128,11 +140,11 @@ export const Controls = ({
               <BooleanLayoutParam label="Strong Gravity" checked={layoutParams.strongGravityMode} onChange={setLayoutParam('strongGravityMode')} />
               <BooleanLayoutParam label="Strong Expansion" checked={layoutParams.linLogMode} onChange={setLayoutParam('linLogMode')} />
               <BooleanLayoutParam label="Dissuade Hubs" checked={layoutParams.outboundAttraction} onChange={setLayoutParam('outboundAttraction')} />
-              <ContinuousLayoutParam label="Gravity Force" min={0} max={100} step={1} value={layoutParams.gravity} onChange={setLayoutParam('gravity')} />
-              <ContinuousLayoutParam label="Expansion Force" min={0} max={100} step={1} value={layoutParams.scalingRatio} onChange={setLayoutParam('scalingRatio')} />
-              <ContinuousLayoutParam label="Speed" min={0.0001} max={1} step={0.0001} value={layoutParams.jitterTolerance} onChange={setLayoutParam('jitterTolerance')} />
+              <ContinuousLayoutParam label="Gravity Force" min={0} max={10} step={1} value={layoutParams.gravity} onChange={setLayoutParam('gravity')} />
+              <ContinuousLayoutParam label="Expansion Force" min={0} max={10} step={1} value={layoutParams.scalingRatio} onChange={setLayoutParam('scalingRatio')} />
+              <ContinuousLayoutParam label="Speed" min={0.0001} max={.1} step={0.0001} value={layoutParams.jitterTolerance} onChange={setLayoutParam('jitterTolerance')} />
               <ContinuousLayoutParam label="Theta" min={0} max={0.001} step={0.0001} value={layoutParams.barnesHutTheta} onChange={setLayoutParam('barnesHutTheta')} />
-              <ContinuousLayoutParam label="Edge Influence" min={0} max={100} step={1} value={layoutParams.edgeWeightInfluence} onChange={setLayoutParam('edgeWeightInfluence')} />
+              <ContinuousLayoutParam label="Edge Influence" min={0} max={10} step={1} value={layoutParams.edgeWeightInfluence} onChange={setLayoutParam('edgeWeightInfluence')} />
             </Form>
           </Accordion.Body>
         </Accordion.Item>

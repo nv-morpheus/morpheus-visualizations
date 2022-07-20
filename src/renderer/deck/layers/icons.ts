@@ -16,6 +16,7 @@
 import {Layer, picking, project32} from '@deck.gl/core';
 // @ts-expect-error
 import {IconLayer as DeckIconLayer} from '@deck.gl/layers';
+import {maxIconAge} from '../../../types';
 
 import {PickingInfo} from '../deck.gl';
 
@@ -76,7 +77,7 @@ export class IconLayer extends DeckIconLayer {
       ...rest,
       uniforms: {
         ...uniforms,
-        maxAge: 3500,
+        maxAge: maxIconAge,
         opacity: this.props.opacity,
         edgeTex: this.props.edgeTex,
         bundleTex: this.props.bundleTex,
