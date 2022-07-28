@@ -12,15 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {DataFrame, DataType, ToArrowMetadata, TypeMap} from '@rapidsai/cudf';
+import {MemoryData} from '@rapidsai/cuda';
+import {ColumnsMap, DataFrame, DataType, Table, ToArrowMetadata, TypeMap} from '@rapidsai/cudf';
+import {DeviceBuffer} from '@rapidsai/rmm';
 import * as arrow from 'apache-arrow';
-import {performance} from 'perf_hooks';
+import {MessagePort} from 'worker_threads';
 
-export function logRuntime<F extends(...args: any[]) => any>(name: string, fn: F): ReturnType<F> {
-  const t = performance.now();
-  const r = fn();
-  if (!!process.env.DEBUG) { console.log(`${name}: ${(performance.now() - t).toFixed(1)}ms`); }
-  return r;
+import * as Ix from './ix';
+
+const logRunTimes = (() => {
+  switch (process.env.LOG_RUN_TIMES) {
+    case '':
+    case '0':
+    case 'false':
+    case undefined: return false;
+    default: return true;
+  }
+})();
+
+export function logRuntime<F extends(...args: any[]) => any>(fn: F): F {
+  if (!logRunTimes) {
+    return ((...args: Parameters<F>) => fn(...args)) as F;
+  } else {
+    return ((...args: Parameters<F>) => {
+             console.time(fn.name);
+             const r = fn(...args);
+             console.timeEnd(fn.name);
+             return r;
+           }) as F;
+  }
 }
 
 export function dfToArrowIPC<T extends TypeMap>(df: DataFrame<T>) {
@@ -34,4 +54,14 @@ export function dfToArrowIPC<T extends TypeMap>(df: DataFrame<T>) {
   };
   const names = df.names.map((name) => toArrowMetadata(<string|number>name, df.types[name]));
   return df.asTable().toArrow(names);
+}
+
+export function fromArrow<T extends TypeMap>(memory: DeviceBuffer|MemoryData): DataFrame<T> {
+  const {names, table} = Table.fromArrow(memory);
+  return new DataFrame(names.reduce((map, name, i) => ({...map, [name]: table.getColumnByIndex(i)}),
+                                    {} as ColumnsMap<T>));
+}
+
+export function fromMessagePortEvent<T>(port: MessagePort, type: string) {
+  return Ix.ai.fromEventPattern<T>((h) => port.on(type, h), (h) => port.off(type, h));
 }

@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Float32, Int32, Uint32, Uint64, Uint8} from '@rapidsai/cudf';
+import {Float32, Int32, Uint32, Uint64, Uint8, Utf8String} from '@rapidsai/cudf';
+
+const maxiconage        = parseFloat(process.env.MAX_ICON_AGE ?? '3500.0');
+export const maxIconAge = isNaN(maxiconage) ? 3500 : maxiconage;
 
 export type DataCursor = number|'prev'|'next'|'play'|'stop';
 
@@ -79,9 +82,11 @@ export interface RenderMessage extends HostBuffers {
 }
 
 export type PreshapedEdges = {
-  src: Int32;  //
-  dst: Int32;  //
-  lvl: Int32   //
+  src: Int32;        //
+  dst: Int32;        //
+  lvl: Int32;        //
+  dt: Int32;         //
+  data: Utf8String;  //
 };
 export type ShapedNodes = {
   id: Int32;      //
@@ -95,24 +100,26 @@ export type ShapedEdges = {
   color: Uint64;   //
   edge: Uint64;    //
   bundle: Uint64;  //
+  // data: Utf8String;  //
 };
 export type ShapedIcons = {
-  id: Int32;     //
-  edge: Int32;   //
-  icon: Int32;   //
-  age: Float32;  //
+  id: Int32;         //
+  edge: Int32;       //
+  icon: Int32;       //
+  age: Float32;      //
+  data: Utf8String;  //
 };
 
 export class LayoutParams {
   public active              = true;
-  public outboundAttraction  = false;
-  public linLogMode          = false;
+  public outboundAttraction  = true;
+  public linLogMode          = true;
   public edgeWeightInfluence = 0.0;
-  public jitterTolerance     = 0.0001;
+  public jitterTolerance     = 0.005;
   public barnesHutTheta      = 0.0;
-  public scalingRatio        = 5.0;
+  public scalingRatio        = 1.0;
   public strongGravityMode   = true;
-  public gravity             = 1.0;
+  public gravity             = 2.0;
 
   constructor(params: Partial<LayoutParams> = {}) { Object.assign(this, params); }
 

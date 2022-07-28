@@ -14,8 +14,7 @@
 
 import {DataFrame, Int32, scope, Series, Uint32, Uint64} from '@rapidsai/cudf';
 import {DedupedEdgesGraph} from '@rapidsai/cugraph';
-
-import {ShapedNodes} from '../../types';
+import {ShapedEdges, ShapedNodes} from '../../types';
 
 export function makeEdges(graph: DedupedEdgesGraph<Int32>, nodes: DataFrame<ShapedNodes>) {
   return graph.edgeIds.select(['id', 'src', 'dst']).assign({
@@ -27,7 +26,7 @@ export function makeEdges(graph: DedupedEdgesGraph<Int32>, nodes: DataFrame<Shap
             })
               .interleaveColumns()
               .view(new Uint64),
-  });
+  }) as DataFrame<ShapedEdges>;
 }
 
 function edgeColors(nodes: DataFrame<{id: Int32, color: Uint32}>,

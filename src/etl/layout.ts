@@ -21,65 +21,83 @@ import {performance} from 'perf_hooks';
 import * as Ix from '../ix';
 import {getTextureSize, TextureFormats} from '../types';
 import {HostBuffers, LayoutParams, ShapedEdges, ShapedIcons, ShapedNodes} from '../types';
+import {maxIconAge} from '../types';
+import {fromArrow} from '../utils';
+import {ShapedUpdate} from './types';
 
-export function layout(dataSource: AsyncIterable<{
-                         index: number,
-                         kind: 'replace' | 'append',
-                         nodes: Uint8Array,
-                         edges: Uint8Array,
-                         icons: Uint8Array,
-                       }>,
-                       layoutParams: AsyncIterable<LayoutParams>) {
-  const params = Ix.ai.whileDo(Ix.ai.of(0), () => new Promise((r) => setTimeout(r, 10, true)))
-                   .pipe(Ix.ai.ops.withLatestFrom(layoutParams))
-                   .pipe(Ix.ai.ops.map(([, params]) => params));
+export function withLayoutLoop(layoutParams: AsyncIterable<LayoutParams>) {
+  return function layoutLoop(dataSource: AsyncIterable<ShapedUpdate>) {
+    const params = Ix.ai.interval(16)
+                     .pipe(Ix.ai.ops.withLatestFrom(
+                       Ix.ai
+                         .from(layoutParams)  //
+                         .pipe(Ix.ai.ops.startWith(new LayoutParams({active: true})))))
+                     .pipe(Ix.ai.ops.map(([, params]) => params));
 
-  const graphs = Ix.ai.as(dataSource).pipe(Ix.ai.ops.map((update) => {
-    const nodes = DataFrame.fromArrow<ShapedNodes>(update.nodes);
-    const edges = DataFrame.fromArrow<ShapedEdges>(update.edges);
-    const icons = DataFrame.fromArrow<ShapedIcons>(update.icons);
-    return {
-      // nodes,
-      // edges,
-      icons,
-      kind: update.kind,
-      index: update.index,
-      hostBuffers: new DataFrameHostBuffers(nodes, edges, icons),
-      graph: new (DedupedEdgesGraph as any)(
-               nodes.select(['id']).assign({node: nodes.get('id')}),
-               edges.select(['id', 'src', 'dst']).assign({
-                 weight: Series.sequence({type: new Float32, size: edges.numRows, init: 1, step: 0})
-               }),
-               {directed: true}) as DedupedEdgesGraph<Int32>
+    const graphs = Ix.ai.as(dataSource).pipe(Ix.ai.ops.map(({kind, index, dueTime, ...update}) => {
+      const nodes = fromArrow<ShapedNodes>(update.nodes);
+      const edges = fromArrow<ShapedEdges>(update.edges);
+      const icons = fromArrow<ShapedIcons>(update.icons);
+      return {
+        // nodes,
+        // edges,
+        kind,
+        index,
+        curTime: 0,
+        dueTime,
+        icons,
+        hostBuffers: new DataFrameHostBuffers(nodes, edges, icons),
+        graph:
+          new (DedupedEdgesGraph as any)(
+            nodes.select(['id']).assign({node: nodes.get('id')}),
+            edges.select(['id', 'src', 'dst']).assign({
+              weight: Series.sequence({type: new Float32, size: edges.numRows, init: 1, step: 0})
+            }),
+            {directed: true}) as DedupedEdgesGraph<Int32>
+      };
+    }));
+
+    const paramsAndGraphs =
+      params  //
+        .pipe(Ix.ai.ops.withLatestFrom(graphs))
+        .pipe(Ix.ai.ops.map(([params, data]) => ({params, data, now: 0, deltaT: 0})));
+
+    const layoutScanSeed: LayoutMemo = {
+      index: 0,
+      curTime: 0,
+      dueTime: 0,
+      kind: 'replace',
+      bbox: [NaN, NaN, NaN, NaN],
+      hostBuffers: new HostBuffers(),
+      positions: undefined as Float32Buffer,
+      icons: undefined as DataFrame<ShapedIcons>,
+      graph: undefined as DedupedEdgesGraph<Int32>,
     };
-  }));
 
-  const paramsAndGraphs = params  //
-                            .pipe(Ix.ai.ops.withLatestFrom(graphs))
-                            .pipe(Ix.ai.ops.map(([params, data]) => ({params, data})));
-
-  const layoutScanSeed: LayoutMemo = {
-    time: 0,
-    index: 0,
-    kind: 'replace',
-    bbox: [NaN, NaN, NaN, NaN],
-    hostBuffers: new HostBuffers(),
-    positions: undefined as Float32Buffer,
-    icons: undefined as DataFrame<ShapedIcons>,
-    graph: undefined as DedupedEdgesGraph<Int32>,
-  };
-
-  return paramsAndGraphs  //
-    .pipe(Ix.ai.ops.scan({seed: layoutScanSeed, callback: layoutScanSelector}))
-    .pipe(Ix.ai.ops.map(({bbox, index, hostBuffers}) => ({
-                          bbox,
-                          index,
-                          ...hostBuffers,
-                        })));
+    return paramsAndGraphs
+      .pipe(Ix.ai.ops.scan({
+        seed: {now: 0, data: null, params: null} as LayoutEvent,
+        callback(memo, {data, params}) {
+          const now    = performance.now();
+          const deltaT = memo.now === 0 ? 0 : now - memo.now;
+          memo.now     = now;
+          memo.data    = data;
+          memo.deltaT  = deltaT;
+          memo.params  = params;
+          return memo;
+        },
+      }))
+      .pipe(Ix.ai.ops.filter(({params}) => params.active))
+      .pipe(Ix.ai.ops.scan({seed: layoutScanSeed, callback: layoutScanSelector}))
+      .pipe(
+        Ix.ai.ops.map(({kind, bbox, index, hostBuffers}) => ({kind, bbox, index, ...hostBuffers})));
+  }
 }
 
 interface LayoutData {
   index: number;
+  curTime: number;
+  dueTime: number;
   kind: 'replace'|'append';
   icons: DataFrame<ShapedIcons>;
   graph: DedupedEdgesGraph<Int32>;
@@ -87,46 +105,41 @@ interface LayoutData {
 }
 
 interface LayoutMemo extends LayoutData {
-  time: number;
   positions: Float32Buffer;
   bbox: [number, number, number, number];
 }
 
 interface LayoutEvent {
+  now: number;
+  deltaT: number;
   data: LayoutData;
   params: LayoutParams;
 }
 
-function layoutScanSelector(memo: LayoutMemo, {params, data}: LayoutEvent) {
-  const n         = data.graph.numNodes;
-  const positions = scope(() => {
-    if (memo.positions && (memo.positions.length / 2) !== n) {
-      const m        = memo.positions.length / 2;
-      memo.positions = (new Float32Buffer(new DeviceBuffer(n * 2 * 4))
-                          .fill(0)
-                          .copyFrom(memo.positions, 0, 0, Math.min(m, n))
-                          .copyFrom(memo.positions, m, n, n * 2));
-    }
-    // Compute positions from the previous positions
-    let pos = Series.new(
-      params.active ? data.graph.forceAtlas2({...params, positions: memo.positions})
-                    : memo.positions ?? new Float32Buffer(new DeviceBuffer(n * 2 * 4)).fill(0));
-    // Fill NaNs produced by fa2 with zeros (NaNs break fa2)
-    if (pos.isNaN().any()) {
-      pos = pos.replaceNaNs(0);
-      if (pos.sum() === 0) {
-        pos = Series.prototype.concat.call(
-          // xs
-          Series.sequence({type: new Float32, size: n}),
-          // ys
-          Series.sequence({type: new Float32, size: n}));
-      }
-    }
-    return pos.data;
-  }, [data.graph]);
+function layoutScanSelector(memo: LayoutMemo, {data, params, deltaT}: LayoutEvent) {
+  // Invalidate scan state when data changes
+  if (memo.dueTime !== data.dueTime) { memo.curTime = 0; }
+  if (data.kind === 'replace') { memo.icons = undefined; }
+  // TODO -- optimization?
+  // if (memo.curTime > (data.dueTime + maxIconAge)) {  //
+  //   memo.icons = undefined;
+  // }
 
-  const x = Series.new(positions.subarray(0, n * 1));
-  const y = Series.new(positions.subarray(n, n * 2));
+  // Update icon ages
+  memo.icons = incrementIconAges(deltaT, params, memo);
+  memo.icons = combineIcons(memo.icons, data.icons);
+  // Filter the icons down to the subset we want to render
+  data.hostBuffers = selectVisibleIcons(data, memo);
+
+  data.kind  = undefined;
+  data.icons = undefined;
+
+  // Compute the new point positions
+  memo.positions = runLayoutTick(memo, data, params);
+
+  const n = data.graph.numNodes;
+  const x = Series.new(memo.positions.subarray(0, n * 1));
+  const y = Series.new(memo.positions.subarray(n, n * 2));
 
   // Copy the x/y positions to host
   data.hostBuffers.node.xPosition =
@@ -134,44 +147,11 @@ function layoutScanSelector(memo: LayoutMemo, {params, data}: LayoutEvent) {
   data.hostBuffers.node.yPosition =
     alignedCopyDToH(y.data, memo.hostBuffers.node.yPosition, 'RGBA32F');
 
-  if (data.kind === 'replace') { memo.icons = undefined; }
-
-  // Update icon ages
-  memo.icons = scope(() => {
-    let {icons} = memo;
-    if (icons && params.active && memo.time > 0) {
-      const deltaT = new CUDF.Scalar({type: new Float32, value: performance.now() - memo.time});
-      icons        = icons.assign({age: icons.get('age').add(deltaT) as Series<Float32>});
-    }
-    return combineIcons(icons, data.icons);
-  }, [memo.icons, data.icons]);
-
-  // Prune icons that are too young or too old
-  scope(() => {
-    let {icons} = memo;
-    const ages  = icons.get('age');
-    const mask  = ages.ge(0).logicalAnd(ages.le(3500));
-    if (!mask.all()) { icons = icons.filter(mask); }
-
-    data.hostBuffers.icon.changed ||= icons.numRows !== memo.icons.numRows;
-
-    if (data.hostBuffers.icon.changed) {
-      // Copy the icon buffers to host
-      const table                = icons.toArrow();
-      data.hostBuffers.icon.id   = table.getChild('id').toArray();
-      data.hostBuffers.icon.age  = table.getChild('age').toArray();
-      data.hostBuffers.icon.icon = table.getChild('icon').toArray();
-      data.hostBuffers.icon.edge = table.getChild('edge').toArray();
-    }
-  }, [memo.icons]);
-
   // Compute the positions minimum bounding box [xMin, xMax, yMin, yMax]
-  memo.bbox = [...x.minmax(), ...y.minmax()] as [number, number, number, number];
-
-  memo.time      = performance.now();
-  memo.positions = positions;
-
+  memo.bbox  = [...x.minmax(), ...y.minmax()] as [number, number, number, number];
   memo.index = data.index;
+  memo.curTime += deltaT;
+  memo.dueTime = data.dueTime;
 
   Object.assign(memo.hostBuffers.node, data.hostBuffers.node);
   Object.assign(memo.hostBuffers.edge, data.hostBuffers.edge);
@@ -181,32 +161,107 @@ function layoutScanSelector(memo: LayoutMemo, {params, data}: LayoutEvent) {
   data.hostBuffers.edge.changed = false;
   data.hostBuffers.icon.changed = false;
 
-  delete data.kind;
-  delete data.icons;
-
   // Yield the host buffers to the render process
   return memo;
+}
+
+function incrementIconAges(deltaT: number, {active}: LayoutParams, {icons}: LayoutData) {
+  if (icons && active && deltaT > 0) {
+    // Update icon ages
+    const ages   = icons.get('age');
+    const scalar = new CUDF.Scalar({type: new Float32, value: deltaT});
+    icons        = icons.assign({age: ages.add(scalar)});
+  }
+  return icons;
 }
 
 function combineIcons(curIcons?: DataFrame<ShapedIcons>, newIcons?: DataFrame<ShapedIcons>) {
   if (newIcons && newIcons.numRows > 0) {
     if (curIcons && curIcons.numRows > 0) {
-      const icons = curIcons.join({
-        how: 'outer',
-        on: ['id'],
-        lsuffix: '_x',
-        rsuffix: '_y',
-        other: newIcons,
-      });
-      return icons.drop(['age_x', 'age_y', 'edge_x', 'edge_y', 'icon_x', 'icon_y']).assign({
-        age: icons.get('age_x').replaceNulls(icons.get('age_y')),
-        edge: icons.get('edge_x').replaceNulls(icons.get('edge_y')),
-        icon: icons.get('icon_x').replaceNulls(icons.get('icon_y')),
-      })
+      return scope(() => {
+        const icons = curIcons.join({
+          how: 'outer',
+          on: ['id'],
+          lsuffix: '_x',
+          rsuffix: '_y',
+          other: newIcons,
+        });
+        return icons
+          .drop(['age_x', 'age_y', 'edge_x', 'edge_y', 'icon_x', 'icon_y', 'data_x', 'data_y'])
+          .assign({
+            age: icons.get('age_x').replaceNulls(icons.get('age_y')),
+            edge: icons.get('edge_x').replaceNulls(icons.get('edge_y')),
+            icon: icons.get('icon_x').replaceNulls(icons.get('icon_y')),
+            data: icons.get('data_x').replaceNulls(icons.get('data_y')),
+          });
+      }, [curIcons, newIcons]);
     }
     return newIcons;
   }
   return curIcons;
+}
+
+function selectVisibleIcons({hostBuffers}: LayoutData, {icons}: LayoutData) {
+  if (!icons) {
+    hostBuffers.icon.changed ||= hostBuffers.icon.id.length !== 0;
+    hostBuffers.icon.id      = new Int32Array(0);
+    hostBuffers.icon.age     = new Float32Array(0);
+    hostBuffers.icon.icon    = new Int32Array(0);
+    hostBuffers.icon.edge    = new Int32Array(0);
+  } else {
+    // Filter the icon lists down to the subset we want to render
+    scope(() => {
+      // Prune icons that are too young or too old
+      const pruned = pruneIconsByAge(icons);
+      // Set the changed flag if we pruned any icons due to their age
+      hostBuffers.icon.changed ||= pruned.numRows !== icons.numRows;
+      // Copy the pruned icon buffers to the host for rendering
+      if (hostBuffers.icon.changed) {
+        hostBuffers.icon.id   = pruned.get('id').data.toArray();
+        hostBuffers.icon.age  = pruned.get('age').data.toArray();
+        hostBuffers.icon.icon = pruned.get('icon').data.toArray();
+        hostBuffers.icon.edge = pruned.get('edge').data.toArray();
+      }
+    }, [icons]);
+  }
+  return hostBuffers;
+}
+
+function pruneIconsByAge(icons: DataFrame<ShapedIcons>) {
+  return scope(() => {
+    const ages  = icons.get('age');
+    const lower = ages.ge(minIconAgeScalar);
+    const upper = ages.le(maxIconAgeScalar);
+    const bools = lower.logicalAnd(upper);
+    return bools.all() ? icons : icons.filter(bools);
+  }, [icons]);
+}
+
+function runLayoutTick({positions}: LayoutMemo, {graph}: LayoutData, params: LayoutParams) {
+  const n = graph.numNodes;
+  if (positions && (positions.length / 2) !== n) {
+    const m   = positions.length / 2;
+    positions = (new Float32Buffer(new DeviceBuffer(n * 2 * 4))
+                   .fill(0)
+                   .copyFrom(positions, 0, 0, Math.min(m, n))
+                   .copyFrom(positions, m, n, n * 2));
+  }
+  // Compute positions from the previous positions
+  let pos =
+    Series.new(params.active ? graph.forceAtlas2({...params, positions})
+                             : positions ?? new Float32Buffer(new DeviceBuffer(n * 2 * 4)).fill(0));
+  // Fill NaNs produced by fa2 with zeros (NaNs break fa2)
+  if (pos.isNaN().any()) {
+    pos = pos.replaceNaNs(0);
+    if (pos.sum() === 0) {
+      pos = Series.prototype.concat.call(
+        // xs
+        Series.sequence({type: new Float32, size: n}),
+        // ys
+        Series.sequence({type: new Float32, size: n}));
+    }
+  }
+  return pos.data;
 }
 
 class DataFrameHostBuffers extends HostBuffers {
@@ -242,17 +297,25 @@ class DataFrameHostBuffers extends HostBuffers {
 
 function copyDToH(src: MemoryView, dst?: any) {
   src.copyInto(dst = ((ary) => {
-                 if (!ary || ary.length < src.length) { return new src.TypedArray(src.length); }
-                 return ary.subarray(0, src.length);
+                 if (!ary || ary.buffer.byteLength < src.byteLength) {
+                   return new src.TypedArray(src.length);
+                 }
+                 return new src.TypedArray(ary.buffer, 0, src.length);
                })(dst));
   return dst;
 }
 
 function alignedCopyDToH(src: MemoryView, dst: any, format: TextureFormats) {
   src.copyInto(dst = ((ary) => {
-                 const {length} = getTextureSize(format, src.byteLength, src.BYTES_PER_ELEMENT);
-                 if (!ary || ary.length < length) { return new src.TypedArray(length); }
-                 return ary.subarray(0, length);
+                 const BPE      = src.BYTES_PER_ELEMENT;
+                 const {length} = getTextureSize(format, src.byteLength, BPE);
+                 if (!ary || ary.buffer.byteLength < length * BPE) {
+                   return new src.TypedArray(length);
+                 }
+                 return new src.TypedArray(ary.buffer, 0, length);
                })(dst));
   return dst;
 }
+
+const minIconAgeScalar = new CUDF.Scalar({type: new Float32, value: 0});
+const maxIconAgeScalar = new CUDF.Scalar({type: new Float32, value: maxIconAge});

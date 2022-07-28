@@ -71,10 +71,10 @@ export const Deck = ({ renderState, autoCenter, setAutoCenter, ...props }: DeckP
     yPositionTex: renderState?.node.yPositionTex,
   };
 
-  const [
-    tooltipX = tooltip?.x,
-    tooltipY = tooltip?.y,
-  ] = (ref.current as any)?.deck?.animationLoop?.animationProps?._mousePosition || [];
+  // const [
+  //   tooltipX = tooltip?.x,
+  //   tooltipY = tooltip?.y,
+  // ] = (ref.current as any)?.deck?.animationLoop?.animationProps?._mousePosition || [];
 
   if ((ref.current as any)?.deck?.tooltip?.el) {
     (ref.current as any).deck.tooltip.remove();
@@ -112,10 +112,14 @@ export const Deck = ({ renderState, autoCenter, setAutoCenter, ...props }: DeckP
           style={{
             ...tooltip.style,
             zIndex: 1,
-            top: tooltipY,
-            left: tooltipX,
-            position: 'absolute',
-            pointerEvents: 'none',
+            // top: tooltipY,
+            // left: tooltipX,
+            right: 0,
+            bottom: 0,
+            maxWidth: `33%`,
+            position: `absolute`,
+            pointerEvents: `none`,
+            wordBreak: 'break-all',
           }}>
           {tooltip.text}
         </div>
@@ -176,6 +180,7 @@ function nodeLayer(renderState: RenderState, textures: any, highlights: any) {
 
 function iconLayer(renderState: RenderState, textures: any, highlights: any) {
   return new IconLayer({
+    parameters: { depthTest: true },
     pickable: true,
     billboard: true,
     autoHighlight: true,
@@ -192,6 +197,7 @@ function iconLayer(renderState: RenderState, textures: any, highlights: any) {
     iconAtlasFrame: renderState.iconAtlasFrame,
     iconAtlasOffset: renderState.iconAtlasOffset,
     ...textures,
+    ...highlights,
     data: {
       attributes: {
         instanceId: { buffer: renderState.icon.id },
@@ -203,13 +209,16 @@ function iconLayer(renderState: RenderState, textures: any, highlights: any) {
   });
 }
 
+const { ipcRenderer } = window.require('electron');
+
 function getTooltip({ x, y, edgeId = -1, nodeId = -1, iconId = -1, sourceNodeId = -1, targetNodeId = -1, iconLevel = -1 }: HoverInfo) {
   const style: any = {
-    'color': '#a0a7b4',
-    'padding': '2px',
-    'marginTop': '-6px',
-    'marginLeft': '12px',
-    'backgroundColor': 'rgba(26, 25, 24, 0.65)',
+    size: 12,
+    color: '#a0a7b4',
+    padding: '2px',
+    marginTop: '-6px',
+    marginLeft: '12px',
+    backgroundColor: 'rgba(26, 25, 24, 0.65)',
   };
   if (iconId !== -1) {
     if (iconLevel === 1) {
@@ -218,10 +227,10 @@ function getTooltip({ x, y, edgeId = -1, nodeId = -1, iconId = -1, sourceNodeId 
       style['color'] = 'rgba(0, 0, 0, 0.65)';
       style['backgroundColor'] = 'rgba(255, 255, 255, 0.65)';
     }
-    return { x, y, style, text: `${iconId}` };
+    return { x, y, style, text: `${ipcRenderer.sendSync('getIconData', iconId)}` };
   }
-  if (nodeId !== -1) { return { x, y, style, text: `${nodeId}` }; }
-  if (edgeId !== -1) { return { x, y, style, text: `${sourceNodeId}-${targetNodeId}` }; }
+  if (nodeId !== -1) { return { x, y, style, text: ipcRenderer.sendSync('getNodeData', nodeId) }; }
+  if (edgeId !== -1) { return { x, y, style, text: ipcRenderer.sendSync('getEdgeData', edgeId) }; }
   return null;
 }
 
@@ -229,9 +238,14 @@ function centerOnBbox([minX, maxX, minY, maxY]: [number, number, number, number]
   const width = Math.max(maxX - minX, 1);
   const height = Math.max(maxY - minY, 1);
   if ((width === width) && (height === height)) {
-    const world = (width > height ? width : height);
-    const screen = (width > height ? parentWidth : parentHeight) * .75;
-    const zoom = (world > screen ? -(world / screen) : (screen / world));
+    const xRatio = width / parentWidth;
+    const yRatio = height / parentHeight;
+    let zoom: number;
+    if (xRatio > yRatio) {
+      zoom = ((width > parentWidth) ? -(width / parentWidth) : (parentWidth / width)) * .9;
+    } else {
+      zoom = ((height > parentHeight) ? -(height / parentHeight) : (parentHeight / height)) * .9;
+    }
     return {
       minZoom: Number.NEGATIVE_INFINITY,
       maxZoom: Number.POSITIVE_INFINITY,

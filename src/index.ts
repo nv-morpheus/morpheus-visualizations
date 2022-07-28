@@ -45,10 +45,24 @@ const createWindow = (): void => {
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-  // Open the DevTools.
-  if (!!process.env.DEBUG) { mainWindow.webContents.openDevTools(); }
+  mainWindow.webContents.once('dom-ready', () => { onDOMReady(mainWindow); });
 
-  mainWindow.webContents.once('dom-ready', () => onDOMReady(mainWindow));
+  mainWindow.webContents.on('render-process-gone', (event, details) => {  //
+    console.error('render process gone:', details);
+    if (details.reason === 'crashed' || details.reason === 'killed') {
+      setImmediate(() => {  //
+        mainWindow.webContents.reload();
+      });
+    }
+  });
+
+  mainWindow.webContents.on('unresponsive', () => {
+    console.error('main window unresponsive, reloading');
+    setImmediate(() => {
+      mainWindow.webContents.forcefullyCrashRenderer();
+      // mainWindow.webContents.reload();
+    });
+  });
 };
 
 // This method will be called when Electron has finished
@@ -69,10 +83,12 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) { createWindow(); }
 });
 
+app.on('child-process-gone', (event, details) => {  //
+  console.error('child process gone:', details);
+});
+
 // // In this file you can include the rest of your app's specific main process
 // // code. You can also put them in separate files and import them here.
-
-import {MessagePort} from 'worker_threads';
 
 import {initializeDefaultPoolMemoryResource} from './rmm';
 
@@ -84,55 +100,94 @@ initializeDefaultPoolMemoryResource(
 import {Series} from '@rapidsai/cudf';
 Series.new([0, 1, 2]).sum();
 
+import {tableFromIPC} from 'apache-arrow';
+
 import {makeETLWorker} from './etl';
-import {layout} from './etl/layout';
+import {ShapedIcons} from './types';
+import {withLayoutLoop} from './etl/layout';
 import * as Ix from './ix';
 
 import {DataCursor, HostBuffers, LayoutParams} from './types';
+import {fromMessagePortEvent} from './utils';
+import {ShapedUpdate} from './etl/types';
 
 const dataCursors  = new Ix.AsyncSink<DataCursor>();
 const layoutParams = new Ix.AsyncSink<LayoutParams>();
 
-ipcMain.on('dataCursor', (_, xs) => { dataCursors.write(xs); });
+ipcMain.on('dataCursor', (_, dataCursor) => { dataCursors.write(dataCursor); });
 ipcMain.on('layoutParams', (_, xs) => { layoutParams.write(new LayoutParams(xs)); });
 
+const initialUpdate = {
+  index: 0,
+  dueTime: 0,
+  kind: 'replace',
+  bbox: [NaN, NaN, NaN, NaN],
+  ...new HostBuffers(),
+};
+
 function onDOMReady(mainWindow: BrowserWindow) {
+  console.clear();
+
   const {worker, cursor, frames, update} = makeETLWorker();
 
   worker.once('online', () => {
-    Ix.ai.from(dataCursors).forEach((xs) => cursor.port2.postMessage(xs));
+    Ix.ai.from(dataCursors).forEach((dataCursor) => { cursor.port2.postMessage(dataCursor); });
 
-    const updates = fromMessagePortEvent<{
-      index: number,
-      kind: 'replace' | 'append',
-      nodes: Uint8Array,
-      edges: Uint8Array,
-      icons: Uint8Array
-    }>(update.port2, 'message');
+    const updates = fromMessagePortEvent<ShapedUpdate>(update.port2, 'message');
+    const counts  = fromMessagePortEvent<{count: number}>(frames.port2, 'message')
+                     .pipe(Ix.ai.ops.startWith({count: 0} as {count: number}));
 
-    const layoutUpdates =
-      layout(updates, layoutParams)
-        .pipe(Ix.ai.ops.startWith(
-          {index: 0, kind: 'replace', bbox: [NaN, NaN, NaN, NaN], ...new HostBuffers()}));
-
-    const frameCounts = fromMessagePortEvent<{count: number}>(frames.port2, 'message')
-                          .pipe(Ix.ai.ops.startWith({count: 0} as {count: number}));
-
-    layoutUpdates.pipe(Ix.ai.ops.combineLatestWith(frameCounts))
-      .forEach(async ([{index, edge, icon, node, bbox}, {count}]) => {
+    updates  //
+      .pipe(withTooltipHandlers())
+      .pipe(withLayoutLoop(layoutParams))
+      .pipe(Ix.ai.ops.startWith(initialUpdate))
+      .pipe(Ix.ai.ops.combineLatestWith(counts))
+      .forEach(async ([{index, dueTime, edge, icon, node, bbox}, {count}]) => {
         const done = new Promise((r) => ipcMain.once('renderComplete', r));
-        mainWindow.webContents.send('render', {edge, icon, node, bbox, index, count});
-        await done;
+        mainWindow.webContents.send('render', {index, count, dueTime, edge, icon, node, bbox});
+        await done.catch(() => {});
       })
       .catch((e) => { console.error('layout error', e); });
   });
-}
 
-function fromMessagePortEvent<T>(port: MessagePort, type: string) {
-  return Ix.ai.fromEventPattern<T>((h) => port.on(type, h), (h) => port.off(type, h));
-}
+  interface ShapedUpdateAndTooltipHandlers extends ShapedUpdate {
+    getNodeData?: (event: import('electron').IpcMainEvent, idx: number) => void;
+    getEdgeData?: (event: import('electron').IpcMainEvent, idx: number) => void;
+    getIconData?: (event: import('electron').IpcMainEvent, idx: number) => void;
+  }
 
-require('@rapidsai/rmm/build/Release/node_rmm.node');
-require('@rapidsai/cuda/build/Release/node_cuda.node');
-require('@rapidsai/cudf/build/Release/node_cudf.node');
-require('@rapidsai/cugraph/build/Release/node_cugraph.node');
+  function withTooltipHandlers() {
+    return Ix.ai.ops.scan({
+      seed: {} as ShapedUpdateAndTooltipHandlers,
+      callback(memo: ShapedUpdateAndTooltipHandlers, xs: ShapedUpdate) {
+        // const nodes = tableFromIPC<ShapedNodes>(xs.nodes);
+        // const edges = tableFromIPC<ShapedEdges>(xs.edges);
+        const icons = tableFromIPC<ShapedIcons>(xs.icons);
+
+        memo.getNodeData && ipcMain.off('getNodeData', memo.getNodeData);
+        ipcMain.on('getNodeData', memo.getNodeData = (event, idx) => {  //
+          // TODO
+          // const eid         = nodes?.getChild('id')?.get(idx);
+          // event.returnValue = edges?.getChild('data')?.get(eid) ?? `${idx}`;
+          event.returnValue = ``;
+        });
+
+        memo.getEdgeData && ipcMain.off('getEdgeData', memo.getEdgeData);
+        ipcMain.on('getEdgeData', memo.getEdgeData = (event, idx) => {  //
+          // TODO
+          // const data        = edges?.getChild('data');
+          // event.returnValue = data?.get(idx) ?? `${idx}`;
+          event.returnValue = ``;
+        });
+
+        memo.getIconData && ipcMain.off('getIconData', memo.getIconData);
+
+        ipcMain.on('getIconData', memo.getIconData = (event, idx) => {  //
+          event.returnValue = icons?.getChild('data')?.get(idx) || `${idx}`;
+        });
+
+        return Object.assign(memo, xs);
+      }
+    });
+  }
+}
