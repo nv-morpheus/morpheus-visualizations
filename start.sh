@@ -60,3 +60,39 @@ python examples/sid_visualization/run.py \
   --input_file=./examples/data/sid_visualization/group3-si-50nodes.jsonlines \
   --input_file=./examples/data/sid_visualization/group4-benign-49nodes.jsonlines \
  &> /dev/null
+
+
+# Get the node packages
+./install-node-rapids.sh
+
+# Run the 20.04 container with the drivers and video capabilities
+docker run --rm -ti -v "$PWD:/work" -w /work -v "/tmp/.X11-unix:/tmp/.X11-unix" \
+    --gpus=all -e DISPLAY="${DISPLAY}" -e NVIDIA_DRIVER_CAPABILITIES="graphics,video,compute,utility" \
+    --cap-add=SYS_PTRACE --security-opt=seccomp=unconfined \
+    -e DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$UID/bus}" \
+    -v /run/dbus/system_bus_socket:/run/dbus/system_bus_socket \
+    ghcr.io/rapidsai/node:22.06.00-devel-node16.15.1-cuda11.6.2-ubuntu20.04-main bash
+
+docker run --rm -ti -v "$PWD:/opt/rapids/viz" -w /opt/rapids/viz  \
+    --gpus=all -e DISPLAY="${DISPLAY}" -e NVIDIA_DRIVER_CAPABILITIES="graphics,video,compute,utility" \
+    --cap-add=SYS_PTRACE --security-opt=seccomp=unconfined --security-opt=apparmor=unconfined \
+    -e DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$UID/bus}" \
+    -v "/tmp/.X11-unix:/tmp/.X11-unix" -v "/run/dbus/system_bus_socket:/run/dbus/system_bus_socket" -v "${XDG_RUNTIME_DIR:-/run/user/$UID}:${XDG_RUNTIME_DIR:-/run/user/$UID}" \
+    sid-viz:base bash
+
+# ===In the container===
+# Need to install libgtk-3-0 first
+sudo apt update
+sudo apt install -y libgtk-3-0
+
+# To clean the build
+rm -rf node_modules
+
+# Install the dependencies
+yarn bootstrap
+
+# Build the GUI
+yarn make
+
+# Launch the GUI
+yarn start

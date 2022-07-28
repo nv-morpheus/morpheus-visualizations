@@ -35,4 +35,5 @@
     "files.associations": {
         "*.glsl.ts": "glsl",
     },
+    "git.ignoreLimitWarning": true,
 }

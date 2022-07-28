@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -x
 set -Eeo pipefail
 
 if [ -d "node_modules/@rapidsai" ]; then
@@ -12,7 +13,8 @@ rm -rf rapidsai
 mkdir -p rapidsai
 
 # Determine your ubuntu version
-UBUNTU_VERSION=$(sed -n 's/^VERSION_ID="\([0-9\.]*\)"$/\1/p' /etc/os-release)
+# UBUNTU_VERSION=$(sed -n 's/^VERSION_ID="\([0-9\.]*\)"$/\1/p' /etc/os-release)
+UBUNTU_VERSION="22.04"
 
 echo "Pulling ubuntu${UBUNTU_VERSION} containers..."
 

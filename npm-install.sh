@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-bash ./install-node-rapids.sh
+# bash ./install-node-rapids.sh
 npm i

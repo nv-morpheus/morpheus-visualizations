@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+  gui:
+    image: sid-viz:latest
+    build:
+      context: .
+      target: base
+    cap_add:
+      - SYS_PTRACE
+    command: bash
+    environment:
+      # Colorize the terminal in the container if possible
+      TERM: "${TERM:-}"
+      DISPLAY: "${DISPLAY:-}"
+      NVIDIA_DRIVER_CAPABILITIES: all
+      DBUS_SESSION_BUS_ADDRESS: "${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$UID/bus}"
+    stdin_open: true
+    tty: true
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./:/opt/rapids/viz
+      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
+      - ${XDG_RUNTIME_DIR:-/run/user/$UID}:${XDG_RUNTIME_DIR:-/run/user/$UID}
+    network_mode: host
+    working_dir: /opt/rapids/viz
+    runtime: nvidia
+    security_opt:
+      - seccomp=unconfined
+      - apparmor=unconfined
