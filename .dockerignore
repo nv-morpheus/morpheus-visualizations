@@ -3,3 +3,4 @@ out*/
 .webpack/
 rapidsai/
 .git
+Dockerfile

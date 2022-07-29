@@ -2,8 +2,8 @@ ARG BASE_IMAGE=ghcr.io/rapidsai/node:22.06.00-devel-node16.15.1-cuda11.6.2-ubunt
 
 FROM ${BASE_IMAGE}-main as base
 
-# Change the shell from a login shell (otherwise apt doesnt work)
-SHELL [ "/bin/bash", "-c" ]
+# # Change the shell from a login shell (otherwise apt doesnt work)
+# SHELL [ "/bin/bash", "-c" ]
 
 USER root
 
@@ -47,7 +47,5 @@ WORKDIR /opt/rapids/viz
 # Clean and install the packages
 RUN rm -rf node_modules && yarn bootstrap
 
-# # Build the GUI
-RUN yarn make
-
-CMD ["yarn", "start"]
+#
+CMD ["yarn", "build_and_start"]
