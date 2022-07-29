@@ -10,17 +10,16 @@ services:
       - SYS_PTRACE
     command: bash
     environment:
-      # Colorize the terminal in the container if possible
-      TERM: "${TERM:-}"
+      DBUS_SESSION_BUS_ADDRESS: "${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$UID/bus}"
       DISPLAY: "${DISPLAY:-}"
       NVIDIA_DRIVER_CAPABILITIES: all
-      DBUS_SESSION_BUS_ADDRESS: "${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$UID/bus}"
+      TERM: "${TERM:-}" # Colorize the terminal in the container if possible
     stdin_open: true
     tty: true
     volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix
       - ./:/opt/rapids/viz
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
+      - /tmp/.X11-unix:/tmp/.X11-unix
       - ${XDG_RUNTIME_DIR:-/run/user/$UID}:${XDG_RUNTIME_DIR:-/run/user/$UID}
     network_mode: host
     working_dir: /opt/rapids/viz
