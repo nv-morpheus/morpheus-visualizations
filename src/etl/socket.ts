@@ -41,7 +41,7 @@ function getFrame(data: Uint8Array) {
 }
 
 export function makeDataSource(channels: MainProcessChannels) {
-  return function makeDataSource(serverURL = new URL('ws://localhost:8765'), timeout = 5000) {
+  return function makeDataSource(serverURL = new URL('ws://' + (process.env.MORPHEUS_SOCKET_URL || 'localhost:8765')), timeout = 5000) {
     return Ix.ai.defer(withWebSocket(channels, serverURL, timeout))
       .pipe(
         Ix.ai.ops.delayEachWithErrorAndComplete(0, timeout),
