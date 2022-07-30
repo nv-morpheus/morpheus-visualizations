@@ -1,11 +1,21 @@
+const makers = [];
+
+if (process.env.MAKE_ZIP === '1') {
+  makers.push({ name: '@electron-forge/maker-zip', platforms: ['linux'] });
+}
+if (process.env.MAKE_DEB === '1') {
+  makers.push({ name: '@electron-forge/maker-deb', config: {} });
+}
+if (process.env.MAKE_APPIMAGE === '1') {
+  makers.push({ name: 'electron-forge-maker-appimage', config: {} });
+}
+if (process.env.MAKE_RPM === '1') {
+  makers.push({ name: '@electron-forge/maker-rpm', config: {} });
+}
+
 module.exports = {
   packagerConfig: {},
-  makers: [
-    // {name: '@electron-forge/maker-zip', platforms: ['linux']},
-    // {name: '@electron-forge/maker-deb', config: {}},
-    {name: 'electron-forge-maker-appimage', config: {}},
-    // { name: '@electron-forge/maker-rpm', config: {} }
-  ],
+  makers,
   plugins: [[
     '@electron-forge/plugin-webpack',
     {
@@ -14,7 +24,7 @@ ${`default-src 'self' 'unsafe-eval' 'unsafe-inline' data:;`}\
 ${`script-src 'self' 'unsafe-eval' 'unsafe-inline' data:;`}\
 ${`script-src-elem 'self' 'unsafe-eval' 'unsafe-inline' unpkg.com *.unpkg.com data:;`}\
 `,
-      devServer: {'liveReload': false},
+      devServer: { 'liveReload': false },
       mainConfig: './config/webpack.main.config.js',
       renderer: {
         nodeIntegration: true,
