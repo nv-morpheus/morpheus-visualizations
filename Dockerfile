@@ -17,8 +17,6 @@ USER root
 
 WORKDIR /home/node
 
-COPY --chown=rapids:rapids . /home/node
-
 SHELL ["/bin/bash", "-Eeox", "pipefail", "-c"]
 
 RUN apt update \
