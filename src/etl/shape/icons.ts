@@ -87,12 +87,7 @@ function joinEdgesAndIcons({edges, icons}: ReturnType<typeof groupEdgesAndIcons>
         age: age.assign({icon}),
         str: str.assign({icon}),
         lvl: lvl.drop(['src_dst']).assign({icon}),
-        sds: lvl.drop(['lvl']).assign({
-          icon,
-          // work around a bug in `DataFrame.flatten()` with Structs
-          src_dst: <Series<(typeof icons)['types']['src_dst']>>(
-            (icons as any).__constructChild('src_dst', lvl.get('src_dst')._col)),
-        }),
+        sds: lvl.drop(['lvl']).assign({icon}),
       };
     }, [icons]);
 
