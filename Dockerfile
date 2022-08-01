@@ -1,51 +1,78 @@
-ARG BASE_IMAGE=ghcr.io/rapidsai/node:22.06.00-devel-node16.15.1-cuda11.6.2-ubuntu20.04
+# syntax=docker/dockerfile:1.3-labs
 
-FROM ${BASE_IMAGE}-main as base
+ARG CUDA_VERSION=11.6.2
+ARG NODE_VERSION=16.15.1
+ARG RAPIDS_VERSION=22.06.00
+ARG LINUX_VERSION=ubuntu20.04
+ARG REPOSITORY=ghcr.io/rapidsai/node
 
-# # Change the shell from a login shell (otherwise apt doesnt work)
-# SHELL [ "/bin/bash", "-c" ]
+ARG FROM_IMAGE=${REPOSITORY}:${RAPIDS_VERSION}-runtime-node${NODE_VERSION}-cuda${CUDA_VERSION}-${LINUX_VERSION}-base
+ARG DEVEL_IMAGE=${REPOSITORY}:${RAPIDS_VERSION}-devel-node${NODE_VERSION}-cuda${CUDA_VERSION}-${LINUX_VERSION}-main
+ARG BUILD_IMAGE=${REPOSITORY}:${RAPIDS_VERSION}-devel-node${NODE_VERSION}-cuda${CUDA_VERSION}-${LINUX_VERSION}-packages
+
+FROM ${BUILD_IMAGE} as build
+FROM ${DEVEL_IMAGE} as devel
 
 USER root
 
-# Install libgtx-3-0
-RUN apt update &&\
-    apt install -y libgtk-3-0 git &&\
-    apt autoremove -y && apt clean &&\
-    rm -rf \
-      /tmp/* \
-      /var/tmp/* \
-      /var/cache/apt/* \
-      /var/lib/apt/lists/*
+WORKDIR /home/node
 
-USER rapids
+SHELL ["/bin/bash", "-Eeox", "pipefail", "-c"]
 
-# Force packages to be downloaded
-ENV RAPIDSAI_SKIP_DOWNLOAD=0
+RUN apt update \
+ && DEBIAN_FRONTEND=noninteractive \
+    apt install -y --no-install-recommends \
+        dpkg fakeroot
 
-FROM ${BASE_IMAGE}-packages as packages
+ARG RAPIDSAI_GPU_ARCH
 
-# Create a new stage to build/run inside the container
-FROM base as build
+RUN --mount=type=bind,source=.,target=/home/node,rw \
+    --mount=type=bind,from=build,source=/opt/rapids,target=/home/node/rapidsai \
+<<EOF
 
-# Copy the source over
-COPY --chown=rapids:rapids ./ /opt/rapids/viz
+RAPIDSAI_GPU_ARCH=${RAPIDSAI_GPU_ARCH} \
+RAPIDSAI_SKIP_DOWNLOAD=0 \
+npm i --verbose
 
-# Copy the packages over
-COPY --from=packages --chown=rapids:rapids [ \
-      "/opt/rapids/rapidsai-core-22.6.0.tgz", \
-      "/opt/rapids/rapidsai-cuda-22.6.0.tgz", \
-      "/opt/rapids/rapidsai-rmm-22.6.0.tgz", \
-      "/opt/rapids/rapidsai-cudf-22.6.0.tgz", \
-      "/opt/rapids/rapidsai-cuml-22.6.0.tgz", \
-      "/opt/rapids/rapidsai-cugraph-22.6.0.tgz", \
-      "/opt/rapids/viz/rapidsai/" \
-    ]
+MAKE_DEB=1 \
+npm run make
 
-# Everything will be out of /opt/rapids/viz
-WORKDIR /opt/rapids/viz
+cp -ar /home/node/out/make/deb/x64/nvidia-morpheus-graphvis_1.0.0_amd64.deb \
+       /opt/nvidia-morpheus-graphvis.deb
 
-# Clean and install the packages
-RUN rm -rf node_modules && yarn bootstrap
+EOF
 
-#
-CMD ["yarn", "build_and_start"]
+FROM ${FROM_IMAGE}
+
+SHELL ["/bin/bash", "-Eeox", "pipefail", "-c"]
+
+USER root
+
+RUN --mount=type=bind,from=devel,source=/opt/nvidia-morpheus-graphvis.deb,target=/opt/nvidia-morpheus-graphvis.deb \
+<<EOF
+
+apt update
+
+DEBIAN_FRONTEND=noninteractive \
+apt install -y --no-install-recommends \
+    /opt/nvidia-morpheus-graphvis.deb
+
+apt autoremove -y
+
+apt clean
+
+rm -rf \
+    /tmp/* \
+    /var/tmp/* \
+    /var/cache/apt/* \
+    /var/lib/apt/lists/*
+
+EOF
+
+USER node
+
+ENV NODE_OPTIONS=
+
+WORKDIR /home/node
+
+CMD ["nvidia-morpheus-graphvis"]

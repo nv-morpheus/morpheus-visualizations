@@ -126,7 +126,9 @@ const initialUpdate = {
 };
 
 function onDOMReady(mainWindow: BrowserWindow) {
-  console.clear();
+  if (typeof process.env.LOG_RUN_TIMES !== 'undefined') { //
+    console.clear();
+  }
 
   const {worker, cursor, frames, update} = makeETLWorker();
 
