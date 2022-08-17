@@ -35,7 +35,7 @@
     "@vercel/webpack-asset-relocator-loader": "1.7.3",
     "css-loader": "^6.0.0",
     "electron": "19.0.8",
-    "electron-forge-maker-appimage": "git://github.com/trusktr/electron-forge-maker-appimage.git#patch-1",
+    "electron-forge-maker-appimage": "trusktr/electron-forge-maker-appimage.git#patch-1",
     "electron-installer-debian": "^3.1.0",
     "electron-installer-redhat": "^3.3.0",
     "eslint": "^8.0.1",
