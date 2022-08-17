@@ -61,17 +61,13 @@ python examples/sid_visualization/run.py \
   --input_file=./examples/data/sid_visualization/group4-benign-49nodes.jsonlines \
  &> /dev/null
 
-
-# Get the node packages
-./install-node-rapids.sh
-
 # Run the 20.04 container with the drivers and video capabilities
 docker run --rm -ti -v "$PWD:/work" -w /work -v "/tmp/.X11-unix:/tmp/.X11-unix" \
     --gpus=all -e DISPLAY="${DISPLAY}" -e NVIDIA_DRIVER_CAPABILITIES="graphics,video,compute,utility" \
     --cap-add=SYS_PTRACE --security-opt=seccomp=unconfined \
     -e DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$UID/bus}" \
     -v /run/dbus/system_bus_socket:/run/dbus/system_bus_socket \
-    ghcr.io/rapidsai/node:22.06.00-devel-node16.15.1-cuda11.6.2-ubuntu20.04-main bash
+    ghcr.io/rapidsai/node:22.6.2-devel-node16.15.1-cuda11-ubuntu20.04-main bash
 
 docker run --rm -ti -v "$PWD:/opt/rapids/viz" -w /opt/rapids/viz  \
     --gpus=all -e DISPLAY="${DISPLAY}" -e NVIDIA_DRIVER_CAPABILITIES="graphics,video,compute,utility" \
@@ -89,10 +85,14 @@ sudo apt install -y libgtk-3-0
 rm -rf node_modules
 
 # Install the dependencies
-yarn bootstrap
+npm i
 
-# Build the GUI
-yarn make
+# Launch the GUI in dev mode
+npm run start
 
-# Launch the GUI
-yarn start
+# Package the GUI into distributables
+MAKE_DEB=1 \
+MAKE_RPM=1 \
+MAKE_ZIP=1 \
+MAKE_APPIMAGE=1 \
+npm run make

@@ -1,10 +1,14 @@
 ```shell
 # Run the following to perform a clean build (Can be skipped for incremental builds)
-rm -rf node_modules rapidsai
+rm -rf node_modules
 
-# Download and build all dependencies
-yarn bootstrap
+# Install all dependencies
+npm install
 
 # Build the demo
-yarn make
+MAKE_DEB=1 \
+MAKE_RPM=1 \
+MAKE_ZIP=1 \
+MAKE_APPIMAGE=1 \
+npm run make
 ```
