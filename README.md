@@ -3,12 +3,12 @@
 rm -rf node_modules
 
 # Install all dependencies
-npm install
+yarn
 
 # Build the demo
 MAKE_DEB=1 \
 MAKE_RPM=1 \
 MAKE_ZIP=1 \
 MAKE_APPIMAGE=1 \
-npm run make
+yarn make
 ```

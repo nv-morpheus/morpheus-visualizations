@@ -85,14 +85,14 @@ sudo apt install -y libgtk-3-0
 rm -rf node_modules
 
 # Install the dependencies
-npm i
+yarn
 
 # Launch the GUI in dev mode
-npm run start
+yarn start
 
 # Package the GUI into distributables
 MAKE_DEB=1 \
 MAKE_RPM=1 \
 MAKE_ZIP=1 \
 MAKE_APPIMAGE=1 \
-npm run make
+yarn make

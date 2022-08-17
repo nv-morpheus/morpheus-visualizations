@@ -36,9 +36,9 @@ RUN --mount=type=bind,source=.,target=/opt/rapids/node,rw \
 RAPIDSAI_GPU_ARCH=${RAPIDSAI_GPU_ARCH} \
 RAPIDSAI_CUDA_VERSION=${CUDA_VERSION} \
 RAPIDSAI_SKIP_DOWNLOAD=0 \
-npm i --verbose
+yarn
 
-MAKE_DEB=1 npm run make
+MAKE_DEB=1 yarn make
 
 cp -ar out/make/deb/x64/nvidia-morpheus-graphvis_*.deb \
        /opt/nvidia-morpheus-graphvis.deb
