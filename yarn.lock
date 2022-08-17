@@ -4704,10 +4704,10 @@ isstream@~0.1.2:
   resolved "https://registry.yarnpkg.com/isstream/-/isstream-0.1.2.tgz#47e63f7af55afa6f92e1500e690eb8b8529c099a"
   integrity sha512-Yljz7ffyPbrLpLngrMtZ7NduUgVvi6wG9RJ9IUcyCd59YQ911PBJphODUcbOVbqYfxe1wuYf/LJ8PauMRwsM/g==
 
-ix@4.5.2:
-  version "4.5.2"
-  resolved "https://registry.yarnpkg.com/ix/-/ix-4.5.2.tgz#c91163d38805c5b427902d7cc2ee35ccee0364a5"
-  integrity sha512-Cm0uEpZd2qU+7DVeyyBQeceafggvPD3xe6LDKUU4YnmOzAFIz0CbxwufRfxywU/5easfCX1XEYcOAkDJUuUtiw==
+ix@5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/ix/-/ix-5.0.0.tgz#b9e292f79b1876bbf696809fe86e42930bdbfcd4"
+  integrity sha512-6LyyrHnvNrSy5pKtW/KA+KKusHrB223aBJCJlIGPN7QBfDkEEtNrAkAz9lLLShIcdJntq6BiPCHuKaCM/9wwXw==
   dependencies:
     "@types/node" "^13.7.4"
     tslib "^2.3.0"

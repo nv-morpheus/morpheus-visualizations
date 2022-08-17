@@ -120,7 +120,6 @@ ipcMain.on('layoutParams', (_, xs) => { layoutParams.write(new LayoutParams(xs))
 
 const initialUpdate = {
   index: 0,
-  dueTime: 0,
   kind: 'replace',
   bbox: [NaN, NaN, NaN, NaN],
   ...new HostBuffers(),
@@ -145,9 +144,9 @@ function onDOMReady(mainWindow: BrowserWindow) {
       .pipe(withLayoutLoop(layoutParams))
       .pipe(Ix.ai.ops.startWith(initialUpdate))
       .pipe(Ix.ai.ops.combineLatestWith(counts))
-      .forEach(async ([{ index, dueTime, edge, icon, node, bbox }, { count }]) => {
+      .forEach(async ([{ index, edge, icon, node, bbox }, { count }]) => {
         const done = new Promise((r) => ipcMain.once('renderComplete', r));
-        mainWindow.webContents.send('render', { index, count, dueTime, edge, icon, node, bbox });
+        mainWindow.webContents.send('render', { index, count, edge, icon, node, bbox });
         await done.catch(() => { });
       })
       .catch((e) => { console.error('layout error', e); });
