@@ -1,8 +1,5 @@
 const makers = [];
 
-if (process.env.MAKE_ZIP === '1') {
-  makers.push({ name: '@electron-forge/maker-zip', platforms: ['linux'] });
-}
 if (process.env.MAKE_DEB === '1') {
   makers.push({ name: '@electron-forge/maker-deb', config: {} });
 }
@@ -11,6 +8,9 @@ if (process.env.MAKE_APPIMAGE === '1') {
 }
 if (process.env.MAKE_RPM === '1') {
   makers.push({ name: '@electron-forge/maker-rpm', config: {} });
+}
+if (process.env.MAKE_ZIP === '1' || makers.length === 0) {
+  makers.push({ name: '@electron-forge/maker-zip', platforms: ['linux'] });
 }
 
 module.exports = {
