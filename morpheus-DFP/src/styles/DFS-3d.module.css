@@ -1,0 +1,79 @@
+/*
+ Copyright (c) 2022, NVIDIA CORPORATION.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
+
+#hexgrid {
+  width: 100vw;
+  height: 80vh;
+  top: 30vh;
+}
+
+#area {
+  width: 100vw;
+  height: 22vh;
+}
+
+.partition {
+  border: none;
+  border-top: 3px double #f2f2f2;
+  color: #0f0f0f;
+  overflow: visible;
+  text-align: center;
+  height: 5px;
+}
+
+.topnav {
+  background-color: #1e1e1e;
+  overflow: hidden;
+  border-top-color: #76b900;
+  border-top-style: solid;
+}
+
+.bottomnav {
+  background-color: #1e1e1e;
+  overflow: hidden;
+  height: 3vh;
+  border-top-color: #76b900;
+  border-top-style: solid;
+}
+.bottomnav {
+  color: white;
+  padding: 10px;
+}
+
+.bottomnavCredits {
+  width: 15%;
+  font-size: 12px;
+}
+
+.bottomnavNotifications {
+  width: 85%;
+  font-size: 12px;
+}
+
+.bottomnavNotifications span {
+  float: right;
+}
+
+.topnav span,
+.topnav a {
+  float: left;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: bold;
+}
