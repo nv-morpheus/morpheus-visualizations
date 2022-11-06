@@ -65,13 +65,17 @@ function HexGrid3dBase({
       position[selectedEvent.instanceId * 16 + 0] = 0.7;
       position[selectedEvent.instanceId * 16 + 10] = 0.7;
       setPreviousSelectedEvent(selectedEvent);
+      myMesh.current.instanceMatrix = new THREE.InstancedBufferAttribute(
+        position,
+        16
+      );
     }
-  }, [position, previousSelectedEvent.instanceId, selectedEvent]);
+  }, [position, selectedEvent]);
 
   return (
     <mesh
       ref={globalMesh}
-      position={[200 - window.innerWidth / 2, 0, 80 - window.innerHeight / 2]}
+      position={[300 - window.innerWidth / 2, 0, 80 - window.innerHeight / 2]}
     >
       <instancedMesh
         ref={myMesh}
@@ -96,7 +100,7 @@ function HexGrid3dBase({
             const result = await requestJSON(
               "getInstances",
               currentDataset,
-              `id=${id}&sort=${appSettings.sort}&sortBy=${appSettings.sortBy}`
+              `id=${id}&sort=${appSettings.sort}&sortBy=${appSettings.sortBy}&numUsers=${appSettings.visibleUsers.value}`
             );
             setEvents(result["result"]);
             await setSelectedEvent({
@@ -131,7 +135,7 @@ function HexGrid3dBase({
         fontSize={20}
         maxWidth={140}
         anchorY={"right"}
-        position-x={-100}
+        position-x={-140}
         position-z={-14}
         lineHeight={1.5}
       >
@@ -140,6 +144,10 @@ function HexGrid3dBase({
       <TimeAxis3D
         ticks={appSettings.lookBackTime}
         timestamps={timestamps}
+        positionX={812}
+        positionY={-50}
+        lineHeight={1.5}
+        labelPositionIncrements={400}
       ></TimeAxis3D>
     </mesh>
   );

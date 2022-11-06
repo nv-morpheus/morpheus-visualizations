@@ -276,13 +276,29 @@ export function compAggregate(df, aggregateFn = "sum") {
   }
 }
 
-export function getInstances(data, instanceID, sort = false, sortBy = "sum") {
+export function getInstances(
+  data,
+  instanceID,
+  sort = false,
+  sortBy = "sum",
+  numUsers = -1
+) {
   let order = sort
     ? compAggregate(
         data.select(["userID", "anomaly_score"]).groupBy({ by: "userID" }),
         sortBy
       )
     : data.get("userID").unique();
+
+  if (numUsers != -1) {
+    order = order.head(numUsers);
+    data = data.join({
+      other: new DataFrame({ userID: order }),
+      on: ["userID"],
+      how: "right",
+    });
+  }
+
   const totalUsers = data.get("userID").nunique();
   const time = parseInt(
     Math.ceil(data.get("time").max() - instanceID / totalUsers)

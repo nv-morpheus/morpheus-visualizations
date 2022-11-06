@@ -18,15 +18,11 @@ import runMiddleware from "../../components/server/runMiddleware";
 export default async function handler(req, res) {
   const datasetName = req.query.dataset;
   await runMiddleware(datasetName, req, res, cache);
-  const time = req.query.time
-    ? parseInt(req.query.time)
-    : req[datasetName].get("time").min();
   const lookBackTime = req.query.lookBackTime
     ? parseInt(req.query.lookBackTime)
     : 20;
 
   const timestamps = req[datasetName]
-    .filter(req[datasetName].get("time").le(time))
     .get("time_")
     .unique()
     .sortValues(false)

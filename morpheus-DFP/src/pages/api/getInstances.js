@@ -22,10 +22,11 @@ export default async function handler(req, res) {
   const id = req.query.id ? parseInt(req.query.id) : -1;
   const sort = req.query.sort ? req.query.sort === "true" : false;
   const sortBy = req.query.sortBy ? req.query.sortBy : "sum";
+  const numUsers = req.query.numUsers ? parseInt(req.query.numUsers) : -1;
 
   if (id >= 0) {
     res.send({
-      result: getInstances(req[datasetName], id, sort, sortBy)
+      result: getInstances(req[datasetName], id, sort, sortBy, numUsers)
         .toArrow()
         .toArray(),
     });

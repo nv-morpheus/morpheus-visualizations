@@ -1,7 +1,13 @@
 import { Text } from "@react-three/drei";
 
-function TimeAxis3D({ ticks = 48, timestamps = [] }) {
-  console.log(timestamps);
+function TimeAxis3D({
+  ticks = 48,
+  timestamps = [],
+  positionX = 812,
+  positionY = -50,
+  lineHeight = 1.5,
+  labelPositionIncrements = 400,
+}) {
   return (
     <>
       <Text
@@ -10,9 +16,9 @@ function TimeAxis3D({ ticks = 48, timestamps = [] }) {
         color="white" // default
         fontSize={20}
         anchorY={"right"}
-        position-x={812}
-        position-z={-50}
-        lineHeight={1.5}
+        position-x={positionX}
+        position-z={positionY}
+        lineHeight={lineHeight}
       >
         {Array(ticks).fill("|      ").join("")}
       </Text>
@@ -25,7 +31,7 @@ function TimeAxis3D({ ticks = 48, timestamps = [] }) {
             color="white" // default
             fontSize={18}
             anchorY={"right"}
-            position-x={index * 400}
+            position-x={index * labelPositionIncrements}
             position-z={-75}
             lineHeight={1.5}
           >

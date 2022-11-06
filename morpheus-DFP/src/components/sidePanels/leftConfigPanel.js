@@ -75,6 +75,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
       const datasets = await requestJSON("getFiles");
       setDatasets(datasets);
       updateConfig("currentDataset", datasets[0]);
+      setConfigValues({ ...configValues, currentDataset: datasets[0] });
     };
     fetchFiles();
   }, [reload, updateConfig]);
@@ -117,7 +118,10 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
               className={styles.configTools}
               value={config.currentDataset}
               onChange={(e) => {
-                updateConfig("currentDataset", e.target.value);
+                setConfigValues({
+                  ...configValues,
+                  currentDataset: e.target.value,
+                });
               }}
             >
               {datasets.map((dataset, i) => {
