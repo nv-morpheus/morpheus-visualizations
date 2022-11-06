@@ -70,15 +70,28 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
     timePerHexRange: eval(process.env.NEXT_PUBLIC_time_bin_per_hex_range),
   });
 
+  async function reloadDatasets() {
+    const datasets = await requestJSON("getFiles");
+    setDatasets(datasets);
+    updateConfig("currentDataset", datasets[0]);
+    setConfigValues({ ...configValues, currentDataset: datasets[0] });
+    console.log("init", datasets[0]);
+  }
+
   useEffect(() => {
-    const fetchFiles = async () => {
-      const datasets = await requestJSON("getFiles");
-      setDatasets(datasets);
-      updateConfig("currentDataset", datasets[0]);
-      setConfigValues({ ...configValues, currentDataset: datasets[0] });
-    };
-    fetchFiles();
-  }, [reload, updateConfig]);
+    reloadDatasets();
+  }, []);
+
+  useEffect(() => {
+    reloadDatasets();
+  }, [reload]);
+
+  useEffect(() => {
+    setConfigValues({
+      ...configValues,
+      visibleUsers: { value: config.visibleUsers.max },
+    });
+  }, [config.visibleUsers.max]);
 
   const refreshDatasets = () => {
     clickReload(!reload);
@@ -116,7 +129,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
             <select
               name="sortEvents"
               className={styles.configTools}
-              value={config.currentDataset}
+              value={configValues.currentDataset}
               onChange={(e) => {
                 setConfigValues({
                   ...configValues,
@@ -201,7 +214,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
               className={`${styles.configSlider}`}
               min={config.visibleUsers.min}
               max={config.visibleUsers.max}
-              defaultValue={config.visibleUsers.value}
+              value={configValues.visibleUsers.value}
               onChange={(e) => {
                 setConfigValues({
                   ...configValues,

@@ -163,7 +163,9 @@ export default class CustomD3 extends React.Component {
   async reload(config = {}) {
     const numUsers = await requestJSON(
       "getNumUsers",
-      `dataset=${config.currentDataset}`
+      `dataset=${
+        config.currentDataset || this.state.AppSettings.currentDataset
+      }`
     );
     const visibleUsers = {
       min: this.state.AppSettings.visibleUsers.min,
@@ -173,13 +175,13 @@ export default class CustomD3 extends React.Component {
     if (config.currentDataset == this.state.AppSettings.currentDataset) {
       visibleUsers.value = config.visibleUsers.value;
     }
-    console.log(visibleUsers, config.visibleUsers, config.currentDataset);
 
     await this.promisedSetState({
       AppSettings: {
         ...this.state.AppSettings,
         visibleUsers,
-        currentDataset: config.currentDataset,
+        currentDataset:
+          config.currentDataset || this.state.AppSettings.currentDataset,
       },
     });
 
