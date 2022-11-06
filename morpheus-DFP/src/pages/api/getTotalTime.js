@@ -18,5 +18,5 @@ import runMiddleware from "../../components/server/runMiddleware";
 export default async function handler(req, res) {
   const datasetName = req.query.dataset;
   await runMiddleware(datasetName, req, res, cache);
-  res.send(req[datasetName].get("time").max());
+  res.send(req[datasetName].get("timeBins").unique().dropNulls().length);
 }

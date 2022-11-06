@@ -82,7 +82,7 @@ function HexGrid3dBase({
         args={[
           null,
           null,
-          appSettings.visibleUsers.value * appSettings.lookBackTime,
+          appSettings.visibleUsers.value * appSettings.totalTime,
         ]}
         onPointerOver={(e) => {
           e.stopPropagation();
@@ -142,9 +142,9 @@ function HexGrid3dBase({
         {userIDs}
       </Text>
       <TimeAxis3D
-        ticks={appSettings.lookBackTime}
+        ticks={(timestamps.length + 1) * 11}
         timestamps={timestamps}
-        positionX={812}
+        positionX={(timestamps.length - 1) * 208.3}
         positionY={-50}
         lineHeight={1.5}
         labelPositionIncrements={400}

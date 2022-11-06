@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     : 20;
 
   const timestamps = req[datasetName]
-    .get("time_")
+    .get("time")
     .unique()
     .sortValues(false)
     .head(lookBackTime);

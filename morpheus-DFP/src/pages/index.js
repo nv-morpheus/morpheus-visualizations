@@ -98,6 +98,7 @@ export default class CustomD3 extends React.Component {
         },
         lookBackTime: parseInt(process.env.NEXT_PUBLIC_look_back_time),
         timePerHex: parseInt(process.env.NEXT_PUBLIC_time_bin_per_hex),
+        totalTime: 48,
       },
       notifications: "",
       loading: false,
@@ -125,6 +126,7 @@ export default class CustomD3 extends React.Component {
     );
     const timestamps = await requestJSON("getTimeStamps", this.appendPayload());
     const userIDs = await requestData("getUniqueIDs", this.appendPayload());
+    const totalTime = await requestJSON("getTotalTime", this.appendPayload());
 
     this.setState({
       position: elevation.batches[0].data.children[0].values,
@@ -143,6 +145,10 @@ export default class CustomD3 extends React.Component {
         instanceId: -1,
       },
       timestamps: timestamps.timeStamps,
+      AppSettings: {
+        ...this.state.AppSettings,
+        totalTime: parseInt(totalTime),
+      },
     });
   }
 

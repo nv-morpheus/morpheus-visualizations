@@ -15,24 +15,22 @@
 import { sendDF, generateData } from "../../components/server/utils";
 const cache = require("../../components/server/cacheDatasets")();
 import runMiddleware from "../../components/server/runMiddleware";
+import { Uint32 } from "@rapidsai/cudf";
 
 export default async function handler(req, res) {
   const datasetName = req.query.dataset;
   await runMiddleware(datasetName, req, res, cache);
 
-  const time = req[datasetName].get("time").max();
   const sort = req.query.sort ? req.query.sort === "true" : false;
   const sortBy = req.query.sortBy ? req.query.sortBy : "sum";
   const numUsers = req.query.numUsers ? parseInt(req.query.numUsers) : -1;
   const lookBackTime = req.query.lookBackTime
     ? parseInt(req.query.lookBackTime)
     : 20;
-  const tempData = req[datasetName].filter(
-    req[datasetName].get("time").gt(time - lookBackTime)
-  );
+
   const result = generateData(
     req[datasetName],
-    tempData,
+    req[datasetName + "_queried"],
     "elevation",
     sort,
     sortBy,

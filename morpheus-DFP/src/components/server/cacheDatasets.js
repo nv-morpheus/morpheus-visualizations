@@ -13,12 +13,7 @@
 // limitations under the License.
 
 import { roundToNearestTime } from "./utils";
-const {
-  DataFrame,
-  Uint32,
-  TimestampSecond,
-  Series,
-} = require("@rapidsai/cudf");
+const { DataFrame, Uint32, Uint64, Series } = require("@rapidsai/cudf");
 const path = require("path");
 
 module.exports = () => {
@@ -26,7 +21,7 @@ module.exports = () => {
   let datasets = {};
 
   function clearCachedGPUData(datasetName) {
-    datasets[datasetName] = null;
+    datasets[datasetName] = undefined;
   }
 
   return async function loadDataMiddleware(datasetName, req, res, next) {
@@ -44,9 +39,28 @@ module.exports = () => {
       datasets[datasetName] ||
       (datasets[datasetName] = await readDataset(datasets, datasetName));
 
+    if (req.query.lookBackTime) {
+      req[datasetName + "_queried"] = await queryDataset(
+        datasets[datasetName],
+        parseInt(req.query.lookBackTime)
+      );
+    }
+
     next();
   };
 };
+
+async function queryDataset(df, lookBackTime) {
+  if (lookBackTime == -1) {
+    return df;
+  }
+  const time = Series.new(df.get("time").data).cast(new Uint64());
+  if (lookBackTime == parseInt(time.min()) * 1000) {
+    return df;
+  }
+  const resultMask = time.gt(parseInt(time.max()) - lookBackTime * 1000); //convert lookbacktime to ms
+  return df.filter(resultMask);
+}
 
 async function readDataset(datasets, datasetName) {
   let fn = DataFrame.readParquet;
@@ -71,27 +85,23 @@ async function readDataset(datasets, datasetName) {
       [`${attr}_scaled`]: attr_mean,
     });
   });
+  const time = roundToNearestTime(data.get("time"), 5);
 
-  data = data
+  return data
     .assign({
       userID: data.get("user").encodeLabels().cast(new Uint32()),
-      createdTime: data.get("time"),
-      time: data.get("time").cast(new TimestampSecond()),
+      timeBins: time._castAsString().encodeLabels().cast(new Uint32()),
+      time: time,
+      userPrincipalName: data.get("user").replaceSlice(" \n", -3, -1),
+      index: Series.sequence({
+        size: data.numRows,
+        init: 0,
+        dtype: new Uint32(),
+        step: 1,
+      }),
     })
     .rename({
       anomalyScore_scaled: "anomaly_score",
     })
     .sortValues({ time: { ascending: true } });
-  const time = roundToNearestTime(data.get("createdTime"), 5);
-  return data.assign({
-    time: time._castAsString().encodeLabels().cast(new Uint32()),
-    time_: time,
-    userPrincipalName: data.get("user").replaceSlice(" \n", -3, -1),
-    index: Series.sequence({
-      size: data.numRows,
-      init: 0,
-      dtype: new Uint32(),
-      step: 1,
-    }),
-  });
 }

@@ -20,17 +20,18 @@ export default async function handler(req, res) {
   const datasetName = req.query.dataset;
   await runMiddleware(datasetName, req, res, cache);
 
-  const time = req.query.time
-    ? parseInt(req.query.time)
-    : req[datasetName].get("time").max();
   const sort = req.query.sort ? req.query.sort === "true" : false;
   const sortBy = req.query.sortBy ? req.query.sortBy : "sum";
   const numUsers = req.query.numUsers ? parseInt(req.query.numUsers) : -1;
-  const tempData = req[datasetName].filter(
-    req[datasetName].get("time").le(time)
-  );
   sendDF(
-    generateData(req[datasetName], tempData, "userIDs", sort, sortBy, numUsers),
+    generateData(
+      req[datasetName],
+      req[datasetName + "_queried"],
+      "userIDs",
+      sort,
+      sortBy,
+      numUsers
+    ),
     res
   );
 }
