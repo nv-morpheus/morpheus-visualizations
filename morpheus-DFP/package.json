@@ -1,6 +1,6 @@
 {
   "name": "morpheus-fingerprint-viz",
-  "version": "22.09",
+  "version": "22.11.00",
   "private": true,
   "scripts": {
     "dev": "CUDA_VISIBLE_DEVICES=0 next dev",
