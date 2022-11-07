@@ -106,7 +106,7 @@ export default class CustomD3 extends React.Component {
   }
 
   appendPayload() {
-    return `dataset=${this.state.AppSettings.currentDataset}&sort=${this.state.AppSettings.sort}&sortBy=${this.state.AppSettings.sortBy}&numUsers=${this.state.AppSettings.visibleUsers.value}&lookBackTime=${this.state.AppSettings.lookBackTime}`;
+    return `dataset=${this.state.AppSettings.currentDataset}&sort=${this.state.AppSettings.sort}&sortBy=${this.state.AppSettings.sortBy}&numUsers=${this.state.AppSettings.visibleUsers.value}&lookBackTime=${this.state.AppSettings.lookBackTime}&timePerHexBin=${this.state.AppSettings.timePerHex}`;
   }
 
   async loadData() {
