@@ -13,36 +13,33 @@
 // limitations under the License.
 
 import { roundToNearestTime } from "./utils";
+const NodeCache = require("node-cache");
 const { DataFrame, Uint32, Uint64, Series } = require("@rapidsai/cudf");
 const path = require("path");
 
+const cache = new NodeCache({ stdTTL: 10 * 60, useClones: false });
+
 module.exports = () => {
-  let timeout = {};
-  let datasets = {};
-
-  function clearCachedGPUData(datasetName) {
-    datasets[datasetName] = undefined;
-  }
-
   return async function loadDataMiddleware(datasetName, req, res, next) {
-    if (timeout[datasetName]) {
-      clearTimeout(timeout[datasetName]);
+    const timePerHexBin = req.query.timePerHexBin
+      ? parseInt(req.query.timePerHexBin)
+      : cache.get(datasetName + "_timePerHexBin") || 1;
+
+    if (
+      !cache.get(datasetName) ||
+      (cache.get(datasetName + "_timePerHexBin") &&
+        cache.get(datasetName + "_timePerHexBin") !== timePerHexBin)
+    ) {
+      const value = await readDataset(datasetName, timePerHexBin);
+      cache.set(datasetName, value);
+      cache.set(datasetName + "_timePerHexBin", timePerHexBin);
     }
-
-    // Set a 10-minute debounce to release server GPU memory
-    timeout[datasetName] = setTimeout(
-      clearCachedGPUData.bind(null, datasetName),
-      10 * 60 * 1000
-    );
-
-    req[datasetName] =
-      datasets[datasetName] ||
-      (datasets[datasetName] = await readDataset(datasets, datasetName));
+    req[datasetName] = cache.get(datasetName);
 
     if (req.query.lookBackTime) {
       req[datasetName + "_queried"] = await queryDataset(
-        datasets[datasetName],
-        parseInt(req.query.lookBackTime)
+        cache.get(datasetName),
+        req.query.lookBackTime ? parseInt(req.query.lookBackTime) : -1
       );
     }
 
@@ -62,7 +59,8 @@ async function queryDataset(df, lookBackTime) {
   return df.filter(resultMask);
 }
 
-async function readDataset(datasets, datasetName) {
+async function readDataset(datasetName, timePerHexBin) {
+  console.log("called readDataset");
   let fn = DataFrame.readParquet;
   datasetName = path.join(process.env.dataset_path, datasetName);
   if (path.extname(datasetName) == ".csv") {
@@ -85,7 +83,8 @@ async function readDataset(datasets, datasetName) {
       [`${attr}_scaled`]: attr_mean,
     });
   });
-  const time = roundToNearestTime(data.get("time"), 5);
+
+  const time = roundToNearestTime(data.get("time"), timePerHexBin);
 
   return data
     .assign({
