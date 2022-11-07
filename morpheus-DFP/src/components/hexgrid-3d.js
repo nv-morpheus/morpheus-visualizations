@@ -142,10 +142,10 @@ function HexGrid3dBase({
         {userIDs}
       </Text>
       <TimeAxis3D
-        ticks={(timestamps.length + 1) * 11}
+        ticks={timestamps.length * 11}
         timestamps={timestamps}
-        positionX={(timestamps.length - 1) * 208.3}
         positionY={-50}
+        positionZ={-75}
         lineHeight={1.5}
         labelPositionIncrements={400}
       ></TimeAxis3D>
