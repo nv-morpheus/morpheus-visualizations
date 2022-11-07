@@ -20,19 +20,12 @@ const fs = require("fs");
 export default function handler(req, res) {
   const dirPath = process.env.dataset_path;
   let fileNames = [];
-  if (fs.existsSync(dirPath)) {
-    fs.readdir(dirPath, (err, files) => {
-      if (err) {
-        res.send(err);
-      }
-      files.forEach((file) => {
-        if (path.extname(file) == ".csv" || path.extname(file) == ".parquet") {
-          fileNames.push(file);
-        }
-      });
-      res.send([...Series.new(fileNames).sortValues(false)]);
-    });
-  } else {
-    res.send([]);
-  }
+
+  fs.readdirSync(dirPath).forEach((file) => {
+    if (path.extname(file) == ".csv" || path.extname(file) == ".parquet") {
+      fileNames.push(file);
+    }
+  });
+
+  res.send([...Series.new(fileNames).sortValues(false)]);
 }
