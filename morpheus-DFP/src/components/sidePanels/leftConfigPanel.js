@@ -55,7 +55,12 @@ async function requestJSON(type = "getFiles", params = null) {
     .catch((e) => console.log(e));
 }
 
-function ConfigPanel({ config, updateConfig, reloadCharts }) {
+function ConfigPanel({
+  config,
+  updateConfig,
+  reloadCharts,
+  setLoadingIndicator,
+}) {
   const [show, setShow] = useState(false);
   const [datasets, setDatasets] = useState([]);
   const [reload, clickReload] = useState(false);
@@ -64,9 +69,8 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
     visibleUsers: { value: config.visibleUsers.value },
     sortFrequency: [1], //seconds
     updateFrequency: [1], //seconds
-    timePerHex: [config.timePerHex], //seconds
-    lookBackTime: [config.lookBackTime], //seconds
-    lookBackTimeRange: eval(process.env.NEXT_PUBLIC_look_back_time_range),
+    timePerHex: parseInt(config.timePerHex), //seconds
+    lookBackTime: config.lookBackTime, //seconds
     timePerHexRange: eval(process.env.NEXT_PUBLIC_time_bin_per_hex_range),
   });
 
@@ -90,8 +94,10 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
     setConfigValues({
       ...configValues,
       visibleUsers: { value: config.visibleUsers.max },
+      lookBackTime: config.lookBackTime,
+      timePerHex: config.timePerHex,
     });
-  }, [config.visibleUsers.max]);
+  }, [config.visibleUsers.max, config.lookBackTime, config.timePerHex]);
 
   const refreshDatasets = () => {
     clickReload(!reload);
@@ -127,7 +133,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
               </a>
             </div>
             <select
-              name="sortEvents"
+              name="currentDataset"
               className={styles.configTools}
               value={configValues.currentDataset}
               onChange={(e) => {
@@ -155,13 +161,10 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
               value={config.sortBy}
               onChange={(e) => {
                 updateConfig("sortBy", e.target.value);
-                setConfigValues({
-                  visibleUsers: { value: config.visibleUsers.value },
-                });
               }}
             >
-              <option value={"mean"}>Mean Anomalous Score</option>
               <option value={"sum"}>Sum of Anomalous Scores</option>
+              <option value={"mean"}>Mean Anomalous Score</option>
               <option value={"max"}>Max Anomalous Score</option>
               <option value={"min"}>Min Anomalous Score</option>
               <option value={"count"}>No. of Events</option>
@@ -294,10 +297,9 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
               className={`${styles.configSlider}`}
               min={configValues.timePerHexRange[0]}
               max={configValues.timePerHexRange[1]}
-              defaultValue={configValues.timePerHex}
+              value={configValues.timePerHex}
               onChange={(e) => {
                 setConfigValues({ ...configValues, timePerHex: e });
-                updateConfig("timePerHex", e);
               }}
               handleStyle={handleStyle}
               trackStyle={trackStyle}
@@ -316,12 +318,11 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
             <div className={styles.configTitle}>Look Back Time</div>
             <Slider
               className={`${styles.configSlider}`}
-              min={configValues.lookBackTimeRange[0]}
-              max={configValues.lookBackTimeRange[1]}
-              defaultValue={configValues.lookBackTime}
+              min={config.lookBackTimeRange[0]}
+              max={config.lookBackTimeRange[1]}
+              value={configValues.lookBackTime}
               onChange={(e) => {
                 setConfigValues({ ...configValues, lookBackTime: e });
-                updateConfig("lookBackTime", e);
               }}
               handleStyle={handleStyle}
               trackStyle={trackStyle}
@@ -343,6 +344,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
               size="sm"
               className={styles.configButton}
               onClick={() => {
+                setLoadingIndicator(true);
                 reloadCharts(configValues);
               }}
             >

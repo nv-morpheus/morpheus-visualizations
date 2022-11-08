@@ -97,6 +97,7 @@ export default class CustomD3 extends React.Component {
           value: process.env.NEXT_PUBLIC_visible_users,
         },
         lookBackTime: parseInt(process.env.NEXT_PUBLIC_look_back_time),
+        lookBackTimeRange: eval(process.env.NEXT_PUBLIC_look_back_time_range),
         timePerHex: parseInt(process.env.NEXT_PUBLIC_time_bin_per_hex),
         totalTime: 48,
       },
@@ -161,20 +162,37 @@ export default class CustomD3 extends React.Component {
     return new Promise((resolve) => this.setState(newState, resolve));
   }
 
-  async reload(config = {}) {
+  async reload(configValues = {}) {
     const numUsers = await requestJSON(
       "getNumUsers",
       `dataset=${
-        config.currentDataset || this.state.AppSettings.currentDataset
+        configValues.currentDataset || this.state.AppSettings.currentDataset
       }`
     );
+    const lookBackTimeMax = await requestJSON(
+      "getTotalLookBackTime",
+      `dataset=${
+        configValues.currentDataset || this.state.AppSettings.currentDataset
+      }`
+    );
+
+    const lookBackTimeRange = [
+      this.state.AppSettings.lookBackTimeRange[0],
+      lookBackTimeMax,
+    ];
+
+    let lookBackTime = parseInt(process.env.NEXT_PUBLIC_look_back_time);
+    let timePerHex = parseInt(process.env.NEXT_PUBLIC_time_bin_per_hex);
+
     const visibleUsers = {
       min: this.state.AppSettings.visibleUsers.min,
       max: numUsers.numUsers,
       value: numUsers.numUsers,
     };
-    if (config.currentDataset == this.state.AppSettings.currentDataset) {
-      visibleUsers.value = config.visibleUsers.value;
+    if (configValues.currentDataset == this.state.AppSettings.currentDataset) {
+      visibleUsers.value = configValues.visibleUsers.value;
+      lookBackTime = configValues.lookBackTime;
+      timePerHex = configValues.timePerHex;
     }
 
     await this.promisedSetState({
@@ -182,11 +200,15 @@ export default class CustomD3 extends React.Component {
         ...this.state.AppSettings,
         visibleUsers,
         currentDataset:
-          config.currentDataset || this.state.AppSettings.currentDataset,
+          configValues.currentDataset || this.state.AppSettings.currentDataset,
+        lookBackTimeRange,
+        lookBackTime,
+        timePerHex,
       },
     });
 
     await this.loadData();
+    this.setLoadingIndicator(false);
   }
 
   resetSelected() {
@@ -242,6 +264,7 @@ export default class CustomD3 extends React.Component {
             config={this.state.AppSettings}
             updateConfig={this.updateAppSettings}
             reloadCharts={this.reload}
+            setLoadingIndicator={this.setLoadingIndicator}
           />
           <span> MORPHEUS | Digital Fingerprint </span>
           <div style={{ float: "right", margin: "0" }}>

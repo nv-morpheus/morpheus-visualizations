@@ -18,6 +18,7 @@ import {
   getInstances,
   getEventStats,
 } from "../../components/server/utils";
+import { Series } from "@rapidsai/cudf";
 const cache = require("../../components/server/cacheDatasets")();
 import runMiddleware from "../../components/server/runMiddleware";
 
@@ -134,6 +135,10 @@ export default async function handler(req, res) {
       break;
     case "getTotalTime":
       res.send(req[datasetName].get("timeBins").unique().dropNulls().length);
+      break;
+    case "getTotalLookBackTime":
+      const time_ = Series.new(req[datasetName].get("time").data);
+      res.send(parseInt(time_.max() - time_.min()) / 1000);
       break;
     default:
       res.status(400).send("invalid route");

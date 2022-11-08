@@ -14,16 +14,23 @@ function TimeAxis3D({
         return (
           <>
             <Text
+              key={timestamp + "_label"}
               scale={[1, 1, 1]}
               rotation={[-1.57, 0, 0]}
               color="white" // default
               fontSize={20}
               anchorY={"right"}
-              position-x={index * labelPositionIncrements + 177}
+              position-x={
+                index == timestamps.length - 1
+                  ? index * labelPositionIncrements
+                  : index * labelPositionIncrements + 177
+              }
               position-z={positionY}
               lineHeight={lineHeight}
             >
-              {Array(9).fill("|        ").join("")}
+              {index == timestamps.length - 1
+                ? Array(1).fill("|        ").join("")
+                : Array(9).fill("|        ").join("")}
             </Text>
 
             <Text
