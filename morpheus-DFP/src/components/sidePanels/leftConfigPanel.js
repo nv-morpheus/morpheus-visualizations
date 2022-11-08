@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Offcanvas from "react-bootstrap/Offcanvas";
 import { List } from "react-bootstrap-icons";
 import CloseButton from "react-bootstrap/CloseButton";
@@ -55,20 +55,41 @@ async function requestJSON(type = "getFiles", params = null) {
     .catch((e) => console.log(e));
 }
 
+function useInterval(callback, delay) {
+  const savedCallback = useRef();
+
+  // Remember the latest callback.
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
+  // Set up the interval.
+  useEffect(() => {
+    function tick() {
+      savedCallback.current();
+    }
+    if (delay !== null) {
+      let id = setInterval(tick, delay);
+      return () => clearInterval(id);
+    }
+  }, [delay]);
+}
+
 function ConfigPanel({
   config,
   updateConfig,
   reloadCharts,
   setLoadingIndicator,
 }) {
+  let reloadInterval;
   const [show, setShow] = useState(false);
   const [datasets, setDatasets] = useState([]);
   const [reload, clickReload] = useState(false);
+  const [liveUpdates, setLiveUpdates] = useState(true);
   const [configValues, setConfigValues] = useState({
     colorThreshold: config.anomalousColorThreshold.map((x) => x * 100),
     visibleUsers: { value: config.visibleUsers.value },
-    sortFrequency: [1], //seconds
-    updateFrequency: [1], //seconds
+    updateFrequency: [900], //seconds
     timePerHex: parseInt(config.timePerHex), //seconds
     lookBackTime: config.lookBackTime, //seconds
     timePerHexRange: eval(process.env.NEXT_PUBLIC_time_bin_per_hex_range),
@@ -77,9 +98,8 @@ function ConfigPanel({
   async function reloadDatasets() {
     const datasets = await requestJSON("getFiles");
     setDatasets(datasets);
-    updateConfig("currentDataset", datasets[0]);
     setConfigValues({ ...configValues, currentDataset: datasets[0] });
-    console.log("init", datasets[0]);
+    reloadCharts({ ...configValues, currentDataset: datasets[0] });
   }
 
   useEffect(() => {
@@ -89,6 +109,18 @@ function ConfigPanel({
   useEffect(() => {
     reloadDatasets();
   }, [reload]);
+
+  useInterval(async () => {
+    if (liveUpdates) {
+      const datasets_ = await requestJSON("getFiles");
+      console.log(datasets_[0], config.currentDataset, datasets);
+      if (datasets_[0] != configValues.currentDataset) {
+        setDatasets(datasets_);
+        setConfigValues({ ...configValues, currentDataset: datasets_[0] });
+        reloadCharts({ ...configValues, currentDataset: datasets_[0] });
+      }
+    }
+  }, configValues.updateFrequency * 1000);
 
   useEffect(() => {
     setConfigValues({
@@ -234,60 +266,6 @@ function ConfigPanel({
               }}
             />
           </ListGroup.Item>
-          {/* <ListGroup.Item
-            className={styles.listOfConfig}
-            key={"sortFrequency"}
-          >
-            <div className={styles.configTitle}>Sort Frequency</div>
-            <Slider
-              className={`${styles.configSlider}`}
-              min={0}
-              max={60}
-              defaultValue={configValues.sortFrequency}
-              onChange={(e) =>
-                setConfigValues({ ...configValues, sortFrequency: e })
-              }
-              handleStyle={handleStyle}
-              trackStyle={trackStyle}
-              railStyle={railStyle}
-              marks={{
-                [configValues.sortFrequency]: {
-                  style: {
-                    color: "white",
-                  },
-                  label: <span>{configValues.sortFrequency} sec</span>,
-                },
-              }}
-            />
-          </ListGroup.Item>
-          <br></br>
-          <ListGroup.Item
-            className={styles.listOfConfig}
-            key={"updateFrequency"}
-          >
-            <div className={styles.configTitle}>Update Frequency</div>
-            <Slider
-              className={`${styles.configSlider}`}
-              min={0}
-              max={300}
-              defaultValue={configValues.updateFrequency}
-              onChange={(e) =>
-                setConfigValues({ ...configValues, updateFrequency: e })
-              }
-              handleStyle={handleStyle}
-              trackStyle={trackStyle}
-              railStyle={railStyle}
-              marks={{
-                [configValues.updateFrequency]: {
-                  style: {
-                    color: "white",
-                  },
-                  label: <span>{configValues.updateFrequency} sec</span>,
-                },
-              }}
-            />
-          </ListGroup.Item>
-          <br></br>*/}
           <ListGroup.Item
             className={styles.listOfConfig}
             key={"timeBinPerHexagon"}
@@ -357,11 +335,37 @@ function ConfigPanel({
             <div className={styles.configTitle}>Live Updates</div>
             <Form.Switch
               className={`${styles.configSwitch} configSwitch`}
-              checked={config.liveUpdates}
+              checked={liveUpdates}
               onChange={(e) => {
-                updateConfig("liveUpdates", e.target.checked);
+                setLiveUpdates(e.target.checked);
               }}
-              label={config.liveUpdates ? "on" : "off"}
+              label={liveUpdates ? "on" : "off"}
+            />
+          </ListGroup.Item>
+          <ListGroup.Item
+            className={styles.listOfConfig}
+            key={"updateFrequency"}
+          >
+            <div className={styles.configTitle}>Update Frequency</div>
+            <Slider
+              className={`${styles.configSlider}`}
+              min={5}
+              max={1800}
+              value={configValues.updateFrequency}
+              onChange={(e) =>
+                setConfigValues({ ...configValues, updateFrequency: e })
+              }
+              handleStyle={handleStyle}
+              trackStyle={trackStyle}
+              railStyle={railStyle}
+              marks={{
+                [configValues.updateFrequency]: {
+                  style: {
+                    color: "white",
+                  },
+                  label: <span>{configValues.updateFrequency} sec</span>,
+                },
+              }}
             />
           </ListGroup.Item>
           <ListGroup.Item

@@ -247,8 +247,8 @@ export default class CustomD3 extends React.Component {
     });
   }
 
-  updateAppSettings(key, value) {
-    this.setState({
+  async updateAppSettings(key, value) {
+    this.promisedSetState({
       AppSettings: {
         ...this.state.AppSettings,
         [key]: value,
