@@ -85,7 +85,6 @@ function ConfigPanel({
   const [show, setShow] = useState(false);
   const [datasets, setDatasets] = useState([]);
   const [reload, clickReload] = useState(false);
-  const [liveUpdates, setLiveUpdates] = useState(true);
   const [configValues, setConfigValues] = useState({
     colorThreshold: config.anomalousColorThreshold.map((x) => x * 100),
     visibleUsers: { value: config.visibleUsers.value },
@@ -111,7 +110,7 @@ function ConfigPanel({
   }, [reload]);
 
   useInterval(async () => {
-    if (liveUpdates) {
+    if (config.liveUpdates) {
       const datasets_ = await requestJSON("getFiles");
       console.log(datasets_[0], config.currentDataset, datasets);
       if (datasets_[0] != configValues.currentDataset) {
@@ -335,11 +334,11 @@ function ConfigPanel({
             <div className={styles.configTitle}>Live Updates</div>
             <Form.Switch
               className={`${styles.configSwitch} configSwitch`}
-              checked={liveUpdates}
+              checked={config.liveUpdates}
               onChange={(e) => {
-                setLiveUpdates(e.target.checked);
+                updateConfig("liveUpdates", e.target.checked);
               }}
-              label={liveUpdates ? "on" : "off"}
+              label={config.liveUpdates ? "on" : "off"}
             />
           </ListGroup.Item>
           <ListGroup.Item

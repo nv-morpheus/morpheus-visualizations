@@ -22,7 +22,7 @@ import { HexGrid3d } from "../components/hexgrid-3d";
 import AreaChart from "../components/area";
 import SidePanel from "../components/sidePanels/rightInfoPanel";
 import ConfigPanel from "../components/sidePanels/leftConfigPanel";
-import styles from "../styles/DFS-3d.module.css";
+import styles from "../styles/index.module.css";
 
 async function requestJSON(type = "getEventStats", params = null) {
   let url = `/api/${type}?`;
@@ -90,6 +90,7 @@ export default class CustomD3 extends React.Component {
           process.env.NEXT_PUBLIC_anomaly_color_threshold
         ),
         liveUpdates: true,
+        lastUpdated: null,
         threeDimensionPerspectiveLock: true,
         visibleUsers: {
           min: 2,
@@ -144,8 +145,22 @@ export default class CustomD3 extends React.Component {
       AppSettings: {
         ...this.state.AppSettings,
         totalTime: parseInt(totalTime),
+        lastUpdated: new Date().toLocaleString(),
       },
     });
+    if (
+      this.state.AppSettings.lookBackTime <
+      this.state.AppSettings.lookBackTimeRange[1]
+    ) {
+      this.setState({
+        notifications:
+          "Not all data is visible at the moment (toggle the following settings: Look Back Time, Time Bin Per Hexagon",
+      });
+    } else {
+      this.setState({
+        notifications: "new data loaded successfully",
+      });
+    }
   }
 
   async componentDidUpdate(prevProps, prevState) {
@@ -281,7 +296,12 @@ export default class CustomD3 extends React.Component {
             <span>Visualization Powered by Node Rapids</span>
           </div>
           <div className={styles.bottomnavNotifications}>
-            <span>{this.state.notifications}</span>
+            <span>
+              {this.state.notifications} &nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;
+              Live Updates: {this.state.AppSettings.liveUpdates ? "On" : "Off"}{" "}
+              &nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; Last Updated:{" "}
+              {this.state.AppSettings.lastUpdated || ""}
+            </span>
           </div>
           <div className={styles.bottomnavLoading}>
             {this.state.loading ? (
