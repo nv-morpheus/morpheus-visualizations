@@ -127,19 +127,14 @@ export default class CustomD3 extends React.Component {
     const timestamps = await requestJSON("getTimeStamps", this.appendPayload());
     const userIDs = await requestData("getUniqueIDs", this.appendPayload());
     const totalTime = await requestJSON("getTotalTime", this.appendPayload());
-
     this.setState({
       position: elevation.batches[0].data.children[0].values,
       colors: colors.batches[0].data.children[0].values,
       userIDs: new TextDecoder().decode(
         userIDs.batches[0].data.children[0].values
       ),
-      anomalousEvents: this.state.anomalousEvents.concat([
-        [new Date(data.time), data.totalAnomalousEvents],
-      ]),
-      totalEvents: this.state.totalEvents.concat([
-        [new Date(data.time), data.totalEvents],
-      ]),
+      anomalousEvents: data.anomalousEvents,
+      totalEvents: data.totalEvents,
       selectedEvent: {
         ...this.state.selectedEvent,
         instanceId: -1,

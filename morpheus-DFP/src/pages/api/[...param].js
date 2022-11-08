@@ -16,6 +16,7 @@ import {
   sendDF,
   generateData,
   getInstances,
+  getEventStats,
 } from "../../components/server/utils";
 const cache = require("../../components/server/cacheDatasets")();
 import runMiddleware from "../../components/server/runMiddleware";
@@ -96,15 +97,7 @@ export default async function handler(req, res) {
         ? parseFloat(req.query.anomalyThreshold)
         : 0.385;
 
-      res.send({
-        totalEvents:
-          req[datasetName].numRows -
-          req[datasetName].get("anomalyScore_scaled").nullCount,
-        totalAnomalousEvents: req[datasetName].filter(
-          req[datasetName].get("anomalyScore_scaled").ge(anomalyThreshold)
-        ).numRows,
-        time: req[datasetName].get("time").getValue(0),
-      });
+      res.send(getEventStats(req[datasetName + "_queried"], anomalyThreshold));
       break;
     case "getInstances":
       const id = req.query.id ? parseInt(req.query.id) : -1;

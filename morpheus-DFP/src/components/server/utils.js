@@ -317,7 +317,36 @@ export function getInstances(
     .select(["userID", "time", "index", "anomalyScore_scaled"])
     .sortValues({ anomalyScore_scaled: { ascending: false } });
 }
+export function getEventStats(df, threshold) {
+  const totalEvents = df
+    .groupBy({ by: "time" })
+    .count()
+    .select(["time", "user"])
+    .sortValues({ time: { ascending: false } })
+    .rename({ user: "count" })
+    .toArrow()
+    .toArray();
+  const anomalousEvents = df
+    .filter(df.get("anomalyScore_scaled").ge(threshold))
+    .groupBy({ by: "time" })
+    .count()
+    .select(["time", "user"])
+    .sortValues({ time: { ascending: false } })
+    .rename({ user: "count" })
+    .toArrow()
+    .toArray();
 
+  return {
+    totalEvents: totalEvents.reduce(
+      (map, value) => map.concat([Object.values(value)]),
+      []
+    ),
+    anomalousEvents: anomalousEvents.reduce(
+      (map, value) => map.concat([Object.values(value)]),
+      []
+    ),
+  };
+}
 export function generateData(
   df,
   df_queried,
