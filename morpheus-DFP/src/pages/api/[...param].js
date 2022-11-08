@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { sendDF, generateData } from "../../components/server/utils";
+import {
+  sendDF,
+  generateData,
+  getInstances,
+} from "../../components/server/utils";
 const cache = require("../../components/server/cacheDatasets")();
 import runMiddleware from "../../components/server/runMiddleware";
-import { Uint32 } from "@rapidsai/cudf";
 
 export default async function handler(req, res) {
   const [fn] = req.query.param;
@@ -75,15 +78,15 @@ export default async function handler(req, res) {
     case "getEventByIndex":
       const index = req.query.index ? parseInt(req.query.index) : -1;
       if (index >= 0) {
-        const tempData = req[datasetName].filter(
-          req[datasetName].get("index").eq(index)
-        );
-
-        res.end({
-          result: tempData.toArrow().toArray(),
+        const result = req[datasetName]
+          .filter(req[datasetName].get("index").eq(index))
+          .toArrow()
+          .toArray()[0];
+        res.send({
+          result: { ...result, ...req[datasetName + "_mean_scores"] },
         });
       } else {
-        res.end({
+        res.send({
           result: null,
         });
       }
@@ -96,9 +99,9 @@ export default async function handler(req, res) {
       res.send({
         totalEvents:
           req[datasetName].numRows -
-          req[datasetName].get("anomaly_score").nullCount,
+          req[datasetName].get("anomalyScore_scaled").nullCount,
         totalAnomalousEvents: req[datasetName].filter(
-          req[datasetName].get("anomaly_score").ge(anomalyThreshold)
+          req[datasetName].get("anomalyScore_scaled").ge(anomalyThreshold)
         ).numRows,
         time: req[datasetName].get("time").getValue(0),
       });
@@ -121,17 +124,16 @@ export default async function handler(req, res) {
       res.send({ numUsers: req[datasetName].get("userID").nunique() });
       break;
     case "getTimeStamps":
-      const timestamps = req[datasetName]
+      const timestamps = req[datasetName + "_queried"]
         .get("time")
         .unique()
-        .sortValues(false)
-        .head(lookBackTime);
+        .sortValues(false);
 
       let indices = [...Array(parseInt(timestamps.length / 10))].map(
-        (_, i) => i * 10
+        (_, i) => i * 12
       );
-      if (timestamps.length % 10 !== 0) {
-        indices = indices.concat(timestamps.length - (timestamps.length % 10));
+      if (timestamps.length % 12 !== 0) {
+        indices = indices.concat(timestamps.length - (timestamps.length % 12));
       }
       res.send({
         timeStamps: [...timestamps.gather(indices)],
