@@ -119,7 +119,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
         </Offcanvas.Header>
 
         <ListGroup>
-          <ListGroup.Item className={styles.listOfAttributes} key={"datasets"}>
+          <ListGroup.Item className={styles.listOfConfig} key={"datasets"}>
             <div className={styles.configTitle}>
               Current Dataset
               <a href="#" onClick={refreshDatasets}>
@@ -147,7 +147,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
             </select>
           </ListGroup.Item>
 
-          <ListGroup.Item className={styles.listOfAttributes} key={"sort"}>
+          <ListGroup.Item className={styles.listOfConfig} key={"sort"}>
             <div className={styles.configTitle}>Sort By (Highest on Top)</div>
             <select
               name="sortEvents"
@@ -169,7 +169,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
           </ListGroup.Item>
 
           <ListGroup.Item
-            className={styles.listOfAttributes}
+            className={styles.listOfConfig}
             key={"colorThreshold"}
           >
             <div className={styles.configTitle}>Anomalous Color Threshold</div>
@@ -205,10 +205,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
               }}
             />
           </ListGroup.Item>
-          <ListGroup.Item
-            className={styles.listOfAttributes}
-            key={"visibleUsers"}
-          >
+          <ListGroup.Item className={styles.listOfConfig} key={"visibleUsers"}>
             <div className={styles.configTitle}>Visible Users (Rows)</div>
             <Slider
               className={`${styles.configSlider}`}
@@ -235,7 +232,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
             />
           </ListGroup.Item>
           {/* <ListGroup.Item
-            className={styles.listOfAttributes}
+            className={styles.listOfConfig}
             key={"sortFrequency"}
           >
             <div className={styles.configTitle}>Sort Frequency</div>
@@ -262,7 +259,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
           </ListGroup.Item>
           <br></br>
           <ListGroup.Item
-            className={styles.listOfAttributes}
+            className={styles.listOfConfig}
             key={"updateFrequency"}
           >
             <div className={styles.configTitle}>Update Frequency</div>
@@ -289,7 +286,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
           </ListGroup.Item>
           <br></br>*/}
           <ListGroup.Item
-            className={styles.listOfAttributes}
+            className={styles.listOfConfig}
             key={"timeBinPerHexagon"}
           >
             <div className={styles.configTitle}>Time Bin Per Hexagon</div>
@@ -315,10 +312,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
               }}
             />
           </ListGroup.Item>
-          <ListGroup.Item
-            className={styles.listOfAttributes}
-            key={"lookBackTime"}
-          >
+          <ListGroup.Item className={styles.listOfConfig} key={"lookBackTime"}>
             <div className={styles.configTitle}>Look Back Time</div>
             <Slider
               className={`${styles.configSlider}`}
@@ -343,10 +337,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
             />
           </ListGroup.Item>
 
-          <ListGroup.Item
-            className={styles.listOfAttributes}
-            key={"applySettings"}
-          >
+          <ListGroup.Item className={styles.listOfConfig} key={"applySettings"}>
             <Button
               variant="secondary"
               size="sm"
@@ -360,10 +351,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
           </ListGroup.Item>
           <div className={styles.underline}></div>
           <br></br>
-          <ListGroup.Item
-            className={styles.listOfAttributes}
-            key={"liveUpdates"}
-          >
+          <ListGroup.Item className={styles.listOfConfig} key={"liveUpdates"}>
             <div className={styles.configTitle}>Live Updates</div>
             <Form.Switch
               className={`${styles.configSwitch} configSwitch`}
@@ -375,7 +363,7 @@ function ConfigPanel({ config, updateConfig, reloadCharts }) {
             />
           </ListGroup.Item>
           <ListGroup.Item
-            className={styles.listOfAttributes}
+            className={styles.listOfConfig}
             key={"3dPerspectiveLock"}
           >
             <div className={styles.configTitle}>3d Perspective Lock</div>

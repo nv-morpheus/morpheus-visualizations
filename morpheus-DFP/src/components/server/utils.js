@@ -247,32 +247,32 @@ export function compAggregate(df, aggregateFn = "sum") {
     case "sum":
       return df
         .sum()
-        .sortValues({ anomaly_score: { ascending: false } })
+        .sortValues({ anomalyScore_scaled: { ascending: false } })
         .get("userID");
     case "mean":
       return df
         .mean()
-        .sortValues({ anomaly_score: { ascending: false } })
+        .sortValues({ anomalyScore_scaled: { ascending: false } })
         .get("userID");
     case "max":
       return df
         .max()
-        .sortValues({ anomaly_score: { ascending: false } })
+        .sortValues({ anomalyScore_scaled: { ascending: false } })
         .get("userID");
     case "min":
       return df
         .min()
-        .sortValues({ anomaly_score: { ascending: false } })
+        .sortValues({ anomalyScore_scaled: { ascending: false } })
         .get("userID");
     case "count":
       return df
         .count()
-        .sortValues({ anomaly_score: { ascending: false } })
+        .sortValues({ anomalyScore_scaled: { ascending: false } })
         .get("userID");
     default:
       return df
         .sum()
-        .sortValues({ anomaly_score: { ascending: false } })
+        .sortValues({ anomalyScore_scaled: { ascending: false } })
         .get("userID");
   }
 }
@@ -286,7 +286,7 @@ export function getInstances(
 ) {
   let order = sort
     ? compAggregate(
-        df.select(["userID", "anomaly_score"]).groupBy({ by: "userID" }),
+        df.select(["userID", "anomalyScore_scaled"]).groupBy({ by: "userID" }),
         sortBy
       )
     : df.get("userID").unique();
@@ -311,16 +311,11 @@ export function getInstances(
     .get("userID")
     .eq(userID)
     .logicalAnd(df.get("timeBins").eq(timeBins));
-  console.log(
-    df
-      .filter(resultMask)
-      .select(["userID", "user", "time", "index", "anomaly_score"])
-      .sortValues({ anomaly_score: { ascending: false } })
-  );
+
   return df
     .filter(resultMask)
-    .select(["userID", "time", "index", "anomaly_score"])
-    .sortValues({ anomaly_score: { ascending: false } });
+    .select(["userID", "time", "index", "anomalyScore_scaled"])
+    .sortValues({ anomalyScore_scaled: { ascending: false } });
 }
 
 export function generateData(
@@ -334,7 +329,7 @@ export function generateData(
 ) {
   let order = sort
     ? compAggregate(
-        df.select(["userID", "anomaly_score"]).groupBy({ by: "userID" }),
+        df.select(["userID", "anomalyScore_scaled"]).groupBy({ by: "userID" }),
         sortBy
       )
     : df.get("userID").unique();
@@ -350,7 +345,7 @@ export function generateData(
 
   const names = df
     .sortValues({ userID: { ascending: true } })
-    .get("userPrincipalName")
+    .get("user")
     .unique();
   const paddingDF = new DataFrame({
     userID: df
@@ -363,10 +358,12 @@ export function generateData(
   if (type == "userIDs") {
     return new DataFrame({
       userID: order,
-      names: names.gather(order),
+      names: names,
     })
       .join({ other: paddingDF, on: ["userID"], how: "outer", lsuffix: "_r" })
-      .select(["names"]);
+      .select(["names", "userID"])
+      .sortValues({ userID: { ascending: true } })
+      .gather(order);
   }
 
   const maxRows = Math.min(df.get("userID").nunique(), numUsers);
@@ -374,20 +371,20 @@ export function generateData(
   let tempData = offsetBasedGridData(df_queried, 20, maxRows);
 
   const group = df_queried
-    .select(["userID", "timeBins", "anomaly_score"])
+    .select(["userID", "timeBins", "anomalyScore_scaled"])
     .groupBy({ by: ["userID", "timeBins"] });
   let finData = group.sum();
 
   finData = finData
     .assign({
-      anomaly_scoreMax: group.max().get("anomaly_score"),
-      elevation: group.count().get("anomaly_score"),
+      anomaly_scoreMax: group.max().get("anomalyScore_scaled"),
+      elevation: group.count().get("anomalyScore_scaled"),
       userID: finData.get("userID_timeBins").getChild("userID"),
       timeBins: finData.get("userID_timeBins").getChild("timeBins"),
     })
     .drop(["userID_timeBins"])
     .sortValues({ userID: { ascending: true }, timeBins: { ascending: true } })
-    .sortValues({ anomaly_score: { ascending: false } });
+    .sortValues({ anomalyScore_scaled: { ascending: false } });
 
   console.time(`compute${type}${df_queried.get("timeBins").max()}`);
   [
