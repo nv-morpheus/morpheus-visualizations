@@ -31,10 +31,13 @@ module.exports = () => {
         cache.get(datasetName + "_timePerHexBin") !== timePerHexBin)
     ) {
       const value = await readDataset(datasetName, timePerHexBin);
+      const meanScores = await computeMeanScores(datasetName, value);
       cache.set(datasetName, value);
-      cache.set(datasetName + "_timePerHexBin", timePerHexBin);
+      cache.set(datasetName + "_timePerHexBin", timePerHexBin, 0);
+      cache.set(datasetName + "_mean_scores", meanScores, 0);
     }
     req[datasetName] = cache.get(datasetName);
+    req[datasetName + "_mean_scores"] = cache.get(datasetName + "_mean_scores");
 
     if (req.query.lookBackTime) {
       req[datasetName + "_queried"] = await queryDataset(
@@ -59,6 +62,29 @@ async function queryDataset(df, lookBackTime) {
   return df.filter(resultMask);
 }
 
+async function computeMeanScores(datasetName, df) {
+  const attrs = df.drop([
+    "user",
+    "userID",
+    "time",
+    "timeBins",
+    "anomalyScore",
+    "anomalyScore_scaled",
+    "index",
+  ]).names;
+
+  return attrs.reduce((map, attr) => {
+    const attr_prefix = datasetName.includes("azure") ? "azure_" : "duo_";
+
+    const mean =
+      parseFloat(
+        process.env[attr_prefix + attr.replace("_score", "") + "_z_loss_mean"]
+      ) || df.get(attr).mean();
+
+    return { ...map, [attr + "_mean"]: mean };
+  }, {});
+}
+
 async function readDataset(datasetName, timePerHexBin) {
   console.log("called readDataset");
   let fn = DataFrame.readParquet;
@@ -74,13 +100,24 @@ async function readDataset(datasetName, timePerHexBin) {
 
   const attrs = data.drop(["user", "time"]).names;
   attrs.forEach((attr) => {
-    const attr_mean = data
+    const attr_prefix = datasetName.includes("azure") ? "azure_" : "duo_";
+
+    const min =
+      parseFloat(
+        process.env[attr_prefix + attr.replace("_score", "") + "_z_loss_min"]
+      ) || data.get(attr).min();
+    let max =
+      parseFloat(
+        process.env[attr_prefix + attr.replace("_score", "") + "_z_loss_max"]
+      ) || data.get(attr).max();
+
+    const attr_scaled = data
       .get(attr)
-      .sub(data.get(attr).min())
+      .sub(min)
       // using 95th percentile score to compute scaled values
-      .div(data.get(attr).quantile(0.95, "linear") - data.get(attr).min());
+      .div(max - min);
     data = data.assign({
-      [`${attr}_scaled`]: attr_mean,
+      [`${attr}_scaled`]: attr_scaled,
     });
   });
 
@@ -91,16 +128,13 @@ async function readDataset(datasetName, timePerHexBin) {
       userID: data.get("user").encodeLabels().cast(new Uint32()),
       timeBins: time._castAsString().encodeLabels().cast(new Uint32()),
       time: time,
-      userPrincipalName: data.get("user").replaceSlice(" \n", -3, -1),
+      user: data.get("user").replaceSlice(" \n", -3, -1),
       index: Series.sequence({
         size: data.numRows,
         init: 0,
         dtype: new Uint32(),
         step: 1,
       }),
-    })
-    .rename({
-      anomalyScore_scaled: "anomaly_score",
     })
     .sortValues({ time: { ascending: true } });
 }
