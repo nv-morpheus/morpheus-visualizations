@@ -1,4 +1,5 @@
 import { Text } from "@react-three/drei";
+import React from "react";
 
 function TimeAxis3D({
   ticks = 48,
@@ -12,7 +13,7 @@ function TimeAxis3D({
     <>
       {timestamps.map((timestamp, index) => {
         return (
-          <>
+          <React.Fragment key={timestamp + `_${index}`}>
             <Text
               key={timestamp + "_label"}
               scale={[1, 1, 1]}
@@ -48,7 +49,7 @@ function TimeAxis3D({
                 hour12: false,
               })}
             </Text>
-          </>
+          </React.Fragment>
         );
       })}
     </>
