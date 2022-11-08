@@ -12,6 +12,13 @@ First, install the dependencies:
 yarn
 ```
 
+Then, update the `.env` file, with the absolute path where the datasets live:
+
+```bash
+# add path
+dataset_path=/home/~/morpheus-visualizations/morpheus-DFP/public/data
+```
+
 Then, run the development/production server:
 
 ```bash
