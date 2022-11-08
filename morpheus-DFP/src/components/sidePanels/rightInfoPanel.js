@@ -43,6 +43,7 @@ function getColorPaletteStyle(threshold) {
 function SidePanel({ allEvents, anomalousColorThreshold, dataset }) {
   const [selectedEvent, setSelectedEvent] = useState("");
   const [selectedEventData, setSelectedEventData] = useState({});
+  const [attributes, setAttributes] = useState([]);
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
 
@@ -59,7 +60,14 @@ function SidePanel({ allEvents, anomalousColorThreshold, dataset }) {
           `index=${selectedEvent}`
         );
         if (result.result) {
-          setSelectedEventData(result.result[0]);
+          setSelectedEventData(result.result);
+          setAttributes([
+            ...new Set(
+              Object.keys(result.result)
+                .filter((w) => w.includes("_mean"))
+                .map((w) => w.replace(/_score|_scaled|_mean/g, ""))
+            ),
+          ]);
         }
       }
     };
@@ -113,8 +121,14 @@ function SidePanel({ allEvents, anomalousColorThreshold, dataset }) {
             >
               {allEvents.map((event) => (
                 <option key={event.index} value={event.index}>
-                  {parseFloat(event.anomaly_score).toFixed(3)} @ time:
-                  {event.time}, Event[{event["index"]}]
+                  {parseFloat(event.anomalyScore_scaled).toFixed(3)} @ time:
+                  {new Date(parseFloat(event.time)).toLocaleTimeString(
+                    "en-US",
+                    {
+                      hour12: false,
+                    }
+                  )}
+                  , Event[{event["index"]}]
                 </option>
               ))}
             </select>
@@ -165,67 +179,71 @@ function SidePanel({ allEvents, anomalousColorThreshold, dataset }) {
               />
             </a>
           </div>
-          {["user", "time", "anomaly_score"].map((attr) => (
-            <ListGroup.Item
-              className={styles.listOfAttributes}
-              variant="dark"
-              key={attr}
-            >
-              <span className={styles.selectedEventTitle}>
-                {attr.charAt(0).toUpperCase() + attr.slice(1)}:{" "}
-                <span
-                  style={{
-                    color: attr == "anomaly_score" ? "#b95422" : "#f2f2f2",
-                  }}
-                >
-                  {selectedEventData ? (
-                    attr == "anomaly_score" ? (
-                      parseFloat(selectedEventData[attr]).toFixed(3)
+          {["user", "time", "anomalyScore", "anomalyScore_scaled"].map(
+            (attr) => (
+              <ListGroup.Item
+                className={styles.listOfAttributes}
+                variant="dark"
+                key={attr}
+              >
+                <span className={styles.selectedEventTitle}>
+                  {attr.charAt(0).toUpperCase() + attr.slice(1)}:{" "}
+                  <span
+                    style={{
+                      color:
+                        attr == "anomalyScore_scaled" ? "#b95422" : "#f2f2f2",
+                    }}
+                  >
+                    {selectedEventData ? (
+                      ["anomalyScore_scaled", "anomalyScore"].includes(attr) ? (
+                        parseFloat(selectedEventData[attr]).toFixed(3)
+                      ) : attr == "time" ? (
+                        new Date(
+                          parseFloat(selectedEventData[attr])
+                        ).toLocaleString("en-US", {
+                          hour12: false,
+                        })
+                      ) : (
+                        selectedEventData[attr]
+                      )
                     ) : (
-                      selectedEventData[attr]
-                    )
-                  ) : (
-                    <></>
-                  )}
+                      <></>
+                    )}
+                  </span>
                 </span>
-              </span>
-            </ListGroup.Item>
-          ))}
+              </ListGroup.Item>
+            )
+          )}
           <br></br>
-          {[
-            "appDisplayName",
-            "appincrement",
-            "clientAppUsed",
-            "deviceDetailbrowser",
-            "locationcity",
-            "locationcountryOrRegion",
-          ].map((attr) => (
+          {attributes.map((attr) => (
             <ListGroup.Item
               className={styles.listOfAttributes}
               variant="dark"
               key={attr}
             >
               <span className={styles.selectedEventTitle}>
-                {attr}:{" "}
+                <u style={{ fontSize: 16 }}>{attr}</u>
+                <br></br>
+                raw score:{" "}
                 <span className={styles.selectedEvent}>
                   {selectedEventData ? (
-                    attr == "anomaly_score" ? (
-                      parseFloat(selectedEventData[attr]).toFixed(3)
-                    ) : (
-                      selectedEventData[attr]
-                    )
+                    parseFloat(selectedEventData[attr + "_score"]).toFixed(3)
                   ) : (
                     <></>
                   )}
                 </span>
+                <br></br>scaled score:
+                <br style={{ lineHeight: "200px" }}></br>
                 <Ruler
                   mean={
                     selectedEventData
-                      ? selectedEventData[attr + "_score_scaled"]
+                      ? selectedEventData[attr + "_score_scaled_mean"]
                       : 0
                   }
                   score={
-                    selectedEventData ? selectedEventData[attr + "_score"] : 0
+                    selectedEventData
+                      ? selectedEventData[attr + "_score_scaled"]
+                      : 0
                   }
                 />
               </span>

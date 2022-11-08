@@ -22,7 +22,7 @@ function Ruler({ mean, score }) {
       <span
         className={styles.rulerLabel}
         style={{
-          marginLeft: `${score * 100}%`,
+          marginLeft: `${Math.min(score, 0.75) * 100}%`,
         }}
       >
         Score({parseFloat(score).toFixed(2)})
@@ -43,7 +43,7 @@ function Ruler({ mean, score }) {
       <div
         className={styles.rulerLabel}
         style={{
-          marginLeft: `${mean * 100}%`,
+          marginLeft: `${Math.min(mean, 0.75) * 100}%`,
         }}
       >
         Mean({parseFloat(mean).toFixed(2)})
