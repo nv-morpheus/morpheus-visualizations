@@ -96,7 +96,7 @@ function AreaChart({ totalEvents, anomalousEvents }) {
         name: "Anomalous Traffic",
         type: "line",
         symbol: "none",
-        stack: true,
+        stack: false,
         lineStyle: {
           width: 0.7,
         },
@@ -119,7 +119,7 @@ function AreaChart({ totalEvents, anomalousEvents }) {
         name: "Network Traffic",
         type: "line",
         symbol: "none",
-        stack: true,
+        stack: false,
         lineStyle: {
           width: 0.7,
           color: "#ffffff",
