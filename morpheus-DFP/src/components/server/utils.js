@@ -34,7 +34,7 @@ export function offsetBasedGridData(df, hexRadius, numUsers) {
   let sortIndex = Series.new([]).cast(new Int32());
   let y = Series.new([]).cast(new Float32());
   let time = Series.new([]).cast(new Int32());
-  const maxTime = df.get("timeBins").unique().dropNulls().length;
+  const maxTime = df.get("timeBins").nunique();
 
   for (var t = 0; t < maxTime; t++) {
     x = x
@@ -243,38 +243,39 @@ export const namesPosition = [
 export const namesColor = ["color_r", "color_g", "color_b"];
 
 export function compAggregate(df, aggregateFn = "sum") {
+  let result_df = df;
   switch (aggregateFn) {
     case "sum":
-      return df
-        .sum()
-        .sortValues({ anomalyScore_scaled: { ascending: false } })
-        .get("userID");
+      result_df = df.sum();
+      break;
     case "mean":
-      return df
-        .mean()
-        .sortValues({ anomalyScore_scaled: { ascending: false } })
-        .get("userID");
+      result_df = df.mean();
+      break;
     case "max":
-      return df
-        .max()
-        .sortValues({ anomalyScore_scaled: { ascending: false } })
-        .get("userID");
+      result_df = df.max();
+      break;
     case "min":
-      return df
-        .min()
-        .sortValues({ anomalyScore_scaled: { ascending: false } })
-        .get("userID");
+      result_df = df.min();
+      break;
     case "count":
-      return df
-        .count()
-        .sortValues({ anomalyScore_scaled: { ascending: false } })
-        .get("userID");
+      result_df = df.count();
+      break;
     default:
-      return df
-        .sum()
-        .sortValues({ anomalyScore_scaled: { ascending: false } })
-        .get("userID");
+      result_df = df.sum();
+      break;
   }
+  return result_df
+    .sortValues({ userID: { ascending: true } })
+    .assign({
+      index: Series.sequence({
+        type: new Uint32(),
+        init: 0,
+        size: result_df.get("userID").nunique(),
+        step: 1,
+      }),
+    })
+    .sortValues({ anomalyScore_scaled: { ascending: false } })
+    .get("index");
 }
 
 export function getInstances(
@@ -298,6 +299,14 @@ export function getInstances(
       on: ["userID"],
       how: "right",
     });
+    order = sort
+      ? compAggregate(
+          df
+            .select(["userID", "anomalyScore_scaled"])
+            .groupBy({ by: "userID" }),
+          sortBy
+        )
+      : df.get("userID").unique();
   }
 
   const totalUsers = df.get("userID").nunique();
@@ -305,7 +314,11 @@ export function getInstances(
     Math.ceil(df.get("timeBins").max() - instanceID / totalUsers)
   );
 
-  const userID = order.getValue(parseInt(instanceID % totalUsers));
+  const userID = df
+    .get("userID")
+    .unique()
+    .sortValues(true)
+    .getValue(order.getValue(parseInt(instanceID % totalUsers)));
 
   const resultMask = df
     .get("userID")
@@ -365,11 +378,24 @@ export function generateData(
 
   if (numUsers != -1) {
     order = order.head(numUsers);
+    df = df.join({
+      other: new DataFrame({ userID: order }),
+      on: ["userID"],
+      how: "right",
+    });
     df_queried = df_queried.join({
       other: new DataFrame({ userID: order }),
       on: ["userID"],
       how: "right",
     });
+    order = sort
+      ? compAggregate(
+          df
+            .select(["userID", "anomalyScore_scaled"])
+            .groupBy({ by: "userID" }),
+          sortBy
+        )
+      : df.get("userID").unique();
   }
 
   const names = df
@@ -385,14 +411,7 @@ export function generateData(
   });
 
   if (type == "userIDs") {
-    return new DataFrame({
-      userID: order,
-      names: names,
-    })
-      .join({ other: paddingDF, on: ["userID"], how: "outer", lsuffix: "_r" })
-      .select(["names", "userID"])
-      .sortValues({ userID: { ascending: true } })
-      .gather(order);
+    return new DataFrame({ names: names.gather(order) });
   }
 
   const maxRows = Math.min(df.get("userID").nunique(), numUsers);
@@ -417,42 +436,42 @@ export function generateData(
 
   console.time(`compute${type}${df_queried.get("timeBins").max()}`);
   [
-    ...df_queried.get("timeBins").unique().dropNulls().sortValues(false),
+    ...df_queried.get("timeBins").unique().sortValues(false).dropNulls(),
   ].forEach((t) => {
-    let sortedResults = finData.filter(finData.get("timeBins").eq(t));
-    sortedResults = sortedResults
-      .join({ other: paddingDF, on: ["userID"], how: "outer", rsuffix: "_r" })
-      .drop(["userID_r"])
-      .sortValues({ userID: { ascending: true } });
-
-    sortedResults = sortedResults.gather(order);
-
     const gridTime = df_queried.get("timeBins").max() - t;
 
-    const gridIndex = Series.sequence({
-      size: order.length,
-      init: 0,
-      step: 1,
-      type: new Uint32(),
-    })
-      .add(maxRows * gridTime)
-      .cast(new Int32());
+    if (gridTime * maxRows < tempData.numRows) {
+      let sortedResults = finData.filter(finData.get("timeBins").eq(t));
+      sortedResults = sortedResults
+        .join({ other: paddingDF, on: ["userID"], how: "outer", rsuffix: "_r" })
+        .drop(["userID_r"])
+        .sortValues({ userID: { ascending: true } });
+      sortedResults = sortedResults.gather(order);
 
-    if (type == "elevation") {
-      const elevation = sortedResults.get("elevation").replaceNulls(-1);
-      tempData = tempData.assign({
-        elevation: tempData.get("elevation").scatter(elevation, gridIndex),
-      });
-    } else if (type == "colors") {
-      const anomaly_scoreMax = sortedResults.get("anomaly_scoreMax");
-      tempData = tempData.assign({
-        anomaly_scoreMax: tempData
-          .get("anomaly_scoreMax")
-          .scatter(anomaly_scoreMax, gridIndex),
-      });
+      const gridIndex = Series.sequence({
+        size: order.length,
+        init: 0,
+        step: 1,
+        type: new Uint32(),
+      })
+        .add(maxRows * gridTime)
+        .cast(new Int32());
+
+      if (type == "elevation") {
+        const elevation_ = sortedResults.get("elevation").replaceNulls(-1);
+        tempData = tempData.assign({
+          elevation: tempData.get("elevation").scatter(elevation_, gridIndex),
+        });
+      } else if (type == "colors") {
+        const anomaly_scoreMax_ = sortedResults.get("anomaly_scoreMax");
+        tempData = tempData.assign({
+          anomaly_scoreMax: tempData
+            .get("anomaly_scoreMax")
+            .scatter(anomaly_scoreMax_, gridIndex),
+        });
+      }
     }
   });
-
   if (type == "colors") {
     const colors = mapValuesToColorSeries(
       tempData.get("anomaly_scoreMax"),
