@@ -58,6 +58,10 @@
   color: #f2f2f2;
 }
 
+.noBaseMargin {
+  padding-bottom: 0% !important;
+}
+
 .configTitle {
   color: white;
   margin-left: 5%;
@@ -79,6 +83,12 @@
   width: 50% !important;
   margin-right: 5% !important;
   float: right;
+}
+
+.loadingIcon {
+  float: right;
+  margin-top: 2%;
+  margin-right: 25%;
 }
 
 .configSwitch {
@@ -103,6 +113,7 @@
   box-shadow: 1px 1px 0f0f0f;
   margin-left: 0;
   color: white;
+  opacity: 0.95;
   border-style: none;
   margin-top: 6vh;
 }

@@ -101,6 +101,7 @@ export default class CustomD3 extends React.Component {
         lookBackTimeRange: eval(process.env.NEXT_PUBLIC_look_back_time_range),
         timePerHex: parseInt(process.env.NEXT_PUBLIC_time_bin_per_hex),
         totalTime: 48,
+        hexHeight: 1,
       },
       notifications: "",
       loading: false,
@@ -280,6 +281,7 @@ export default class CustomD3 extends React.Component {
             updateConfig={this.updateAppSettings}
             reloadCharts={this.reload}
             setLoadingIndicator={this.setLoadingIndicator}
+            loading={this.state.loading}
           />
           <span> MORPHEUS | Digital Fingerprint </span>
           <div style={{ float: "right", margin: "0" }}>
@@ -303,11 +305,14 @@ export default class CustomD3 extends React.Component {
               {this.state.AppSettings.lastUpdated || ""}
             </span>
           </div>
-          <div className={styles.bottomnavLoading}>
-            {this.state.loading ? (
-              <Spinner animation="border" variant="light" size="sm" />
-            ) : null}
-          </div>
+          {this.state.loading ? (
+            <Spinner
+              animation="border"
+              variant="light"
+              size="sm"
+              className={styles.loadingIcon}
+            />
+          ) : null}
         </Navbar>
 
         <div id={styles.area}>
@@ -329,6 +334,7 @@ export default class CustomD3 extends React.Component {
             setLoadingIndicator={this.setLoadingIndicator}
             timestamps={this.state.timestamps}
             currentDataset={this.state.AppSettings.currentDataset}
+            hexHeight={this.state.AppSettings.hexHeight}
           />
 
           <SidePanel

@@ -44,12 +44,18 @@ function HexGrid3dBase({
   setSelectedEvent,
   currentDataset,
   setEvents,
+  hexHeight,
 }) {
   const myMesh = useRef();
   const globalMesh = useRef();
+  const geo = useRef();
   const [previousSelectedEvent, setPreviousSelectedEvent] = useState({
     instanceId: -1,
   });
+
+  useEffect(() => {
+    geo.current.translate(0, hexHeight / 2, 0);
+  }, [hexHeight]);
 
   useEffect(() => {
     myMesh.current.instanceMatrix = new THREE.InstancedBufferAttribute(
@@ -118,8 +124,9 @@ function HexGrid3dBase({
         }}
       >
         <cylinderGeometry
+          ref={geo}
           attach="geometry"
-          args={[hexRadius - 4, hexRadius - 4, 1, 6, 1]}
+          args={[hexRadius - 4, hexRadius - 4, hexHeight, 6, 1]}
         >
           <instancedBufferAttribute
             attach="attributes-color"
@@ -166,6 +173,7 @@ export function HexGrid3d({
   currentDataset,
   setEvents,
   resetSelected,
+  hexHeight,
 }) {
   const controlsRef = useRef();
   const cameraRef = useRef();
@@ -223,6 +231,7 @@ export function HexGrid3d({
             appSettings={appSettings}
             timestamps={timestamps}
             currentDataset={currentDataset}
+            hexHeight={hexHeight}
           />
         ) : (
           <></>

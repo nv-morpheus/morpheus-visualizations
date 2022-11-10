@@ -15,6 +15,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Offcanvas from "react-bootstrap/Offcanvas";
 import { List } from "react-bootstrap-icons";
+import Spinner from "react-bootstrap/Spinner";
 import CloseButton from "react-bootstrap/CloseButton";
 import ListGroup from "react-bootstrap/ListGroup";
 import Slider from "rc-slider";
@@ -80,6 +81,7 @@ function ConfigPanel({
   updateConfig,
   reloadCharts,
   setLoadingIndicator,
+  loading,
 }) {
   let reloadInterval;
   const [show, setShow] = useState(false);
@@ -314,23 +316,33 @@ function ConfigPanel({
               }}
             />
           </ListGroup.Item>
-
           <ListGroup.Item className={styles.listOfConfig} key={"applySettings"}>
-            <Button
-              variant="secondary"
-              size="sm"
-              className={styles.configButton}
-              onClick={() => {
-                setLoadingIndicator(true);
-                reloadCharts(configValues);
-              }}
-            >
-              Apply
-            </Button>
+            {loading ? (
+              <Spinner
+                animation="border"
+                variant="light"
+                size="sm"
+                className={styles.loadingIcon}
+              />
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                className={styles.configButton}
+                onClick={() => {
+                  setLoadingIndicator(true);
+                  reloadCharts(configValues);
+                }}
+              >
+                Apply
+              </Button>
+            )}
           </ListGroup.Item>
           <div className={styles.underline}></div>
-          <br></br>
-          <ListGroup.Item className={styles.listOfConfig} key={"liveUpdates"}>
+          <ListGroup.Item
+            className={`${styles.listOfConfig} ${styles.noBaseMargin}`}
+            key={"liveUpdates"}
+          >
             <div className={styles.configTitle}>Live Updates</div>
             <Form.Switch
               className={`${styles.configSwitch} configSwitch`}
@@ -367,8 +379,9 @@ function ConfigPanel({
               }}
             />
           </ListGroup.Item>
+
           <ListGroup.Item
-            className={styles.listOfConfig}
+            className={`${styles.listOfConfig} ${styles.noBaseMargin}`}
             key={"3dPerspectiveLock"}
           >
             <div className={styles.configTitle}>3d Perspective Lock</div>
@@ -379,6 +392,30 @@ function ConfigPanel({
                 updateConfig("threeDimensionPerspectiveLock", e.target.checked);
               }}
               label={config.threeDimensionPerspectiveLock ? "on" : "off"}
+            />
+          </ListGroup.Item>
+          <ListGroup.Item
+            className={styles.listOfConfig}
+            key={"hexHeightScale"}
+          >
+            <div className={styles.configTitle}>Hexagon Height</div>
+            <Slider
+              className={`${styles.configSlider}`}
+              min={1}
+              max={100}
+              value={config.hexHeight}
+              onChange={(e) => updateConfig("hexHeight", e)}
+              handleStyle={handleStyle}
+              trackStyle={trackStyle}
+              railStyle={railStyle}
+              marks={{
+                [configValues.updateFrequency]: {
+                  style: {
+                    color: "white",
+                  },
+                  label: <span>{configValues.updateFrequency} sec</span>,
+                },
+              }}
             />
           </ListGroup.Item>
         </ListGroup>

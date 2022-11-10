@@ -458,7 +458,7 @@ export function generateData(
         .cast(new Int32());
 
       if (type == "elevation") {
-        const elevation_ = sortedResults.get("elevation").replaceNulls(-1);
+        const elevation_ = sortedResults.get("elevation").replaceNulls(0);
         tempData = tempData.assign({
           elevation: tempData.get("elevation").scatter(elevation_, gridIndex),
         });
