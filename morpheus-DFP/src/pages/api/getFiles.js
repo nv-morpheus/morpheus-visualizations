@@ -18,7 +18,11 @@ const path = require("path");
 const fs = require("fs");
 
 export default function handler(req, res) {
-  const dirPath = process.env.dataset_path;
+  let dirPath = path.join(__dirname, "../../../../public/data");
+  if (process.env.dataset_path) {
+    dirPath = process.env.dataset_path;
+  }
+
   let fileNames = [];
 
   fs.readdirSync(dirPath).forEach((file) => {
