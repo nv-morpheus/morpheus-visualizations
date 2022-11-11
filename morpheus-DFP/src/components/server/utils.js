@@ -458,7 +458,7 @@ export function generateData(
         .cast(new Int32());
 
       if (type == "elevation") {
-        const elevation_ = sortedResults.get("elevation").replaceNulls(0);
+        const elevation_ = sortedResults.get("elevation").replaceNulls(-1);
         tempData = tempData.assign({
           elevation: tempData.get("elevation").scatter(elevation_, gridIndex),
         });
@@ -482,6 +482,19 @@ export function generateData(
       color_r: colors.color_r,
       color_g: colors.color_g,
       color_b: colors.color_b,
+    });
+  } else if (type == "elevation") {
+    const idx = tempData
+      .filter(tempData.get("elevation").eq(-1))
+      .get("sortIndex");
+    console.log([...tempData.get("sortIndex")], [...idx]);
+    tempData = tempData.assign({
+      elevation: tempData
+        .get("elevation")
+        .scatter(null, idx)
+        .mul(10)
+        .replaceNulls(1)
+        .cast(new Float32()),
     });
   }
   console.timeEnd(`compute${type}${df_queried.get("timeBins").max()}`);
@@ -509,7 +522,8 @@ export function mapValuesToColorSeries(
   values,
   domain,
   colors_,
-  nullColor = { r: 33, g: 33, b: 33 }
+  defaultColor = { r: 33, g: 33, b: 33 },
+  nullColor = { r: 12, g: 12, b: 12 }
 ) {
   // validate colors and domain lengths
   if (colors_.length < 1 || domain.length < 1) {
@@ -522,19 +536,19 @@ export function mapValuesToColorSeries(
 
   const color_r = Series.sequence({
     step: 0,
-    init: nullColor.r / 255,
+    init: defaultColor.r / 255,
     type: new Float32(),
     size: values.length,
   });
   const color_g = Series.sequence({
     step: 0,
-    init: nullColor.g / 255,
+    init: defaultColor.g / 255,
     type: new Float32(),
     size: values.length,
   });
   const color_b = Series.sequence({
     step: 0,
-    init: nullColor.b / 255,
+    init: defaultColor.b / 255,
     type: new Float32(),
     size: values.length,
   });
@@ -562,6 +576,13 @@ export function mapValuesToColorSeries(
       color_g.setValues(indices, color.g);
       color_b.setValues(indices, color.b);
     }
+  }
+  if (values.countNonNulls() !== values.length) {
+    // contains null values
+    const indices = colorIndices.filter(values.isNull());
+    color_r.setValues(indices, nullColor.r / 255);
+    color_g.setValues(indices, nullColor.g / 255);
+    color_b.setValues(indices, nullColor.b / 255);
   }
 
   return { color_r, color_g, color_b };
