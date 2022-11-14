@@ -10,12 +10,19 @@
     core-js-pure "^3.25.1"
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.10.1", "@babel/runtime@^7.10.2", "@babel/runtime@^7.11.2", "@babel/runtime@^7.16.7", "@babel/runtime@^7.17.2", "@babel/runtime@^7.17.8", "@babel/runtime@^7.18.3", "@babel/runtime@^7.18.9", "@babel/runtime@^7.5.5", "@babel/runtime@^7.6.2", "@babel/runtime@^7.6.3", "@babel/runtime@^7.8.7":
+"@babel/runtime@^7.10.1", "@babel/runtime@^7.10.2", "@babel/runtime@^7.11.2", "@babel/runtime@^7.16.7", "@babel/runtime@^7.17.2", "@babel/runtime@^7.18.3", "@babel/runtime@^7.18.9", "@babel/runtime@^7.5.5", "@babel/runtime@^7.6.2", "@babel/runtime@^7.6.3", "@babel/runtime@^7.8.7":
   version "7.19.0"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.19.0.tgz#22b11c037b094d27a8a2504ea4dcff00f50e2259"
   integrity sha512-eR8Lo9hnDS7tqkO7NsV+mKvCmv5boaXFSZ70DnfhcgiEne8hv9oCEd36Klw74EtizEqLsy4YnW8UWwpBVolHZA==
   dependencies:
     regenerator-runtime "^0.13.4"
+
+"@babel/runtime@^7.17.8":
+  version "7.20.1"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.20.1.tgz#1148bb33ab252b165a06698fde7576092a78b4a9"
+  integrity sha512-mrzLkl6U9YLF8qpqI7TB82PESyEGjm/0Ly91jG575eVxMMlb8fYfOXFZIJ8XfLrJZQbm7dlKry2bJmXBUEkdFg==
+  dependencies:
+    regenerator-runtime "^0.13.10"
 
 "@chevrotain/cst-dts-gen@10.3.0":
   version "10.3.0"
@@ -272,10 +279,10 @@
   resolved "https://registry.yarnpkg.com/@react-spring/types/-/types-9.5.5.tgz#c8e94f1b9232ca7cb9d860ea67762ec401b1de14"
   integrity sha512-7I/qY8H7Enwasxr4jU6WmtNK+RZ4Z/XvSlDvjXFVe7ii1x0MoSlkw6pD7xuac8qrHQRm9BTcbZNyeeKApYsvCg==
 
-"@react-three/drei@^9.19.7":
-  version "9.34.1"
-  resolved "https://registry.yarnpkg.com/@react-three/drei/-/drei-9.34.1.tgz#6ac09f9692464ab8aa5edfac7854bdd9383fd222"
-  integrity sha512-QATmoLjC9BhzcFso45x0ELGxqaiMfAxkX6DHSEzi0+oOYLewG4HhwH9pDBWPHA4q8qtcyZU1ayd43fMtw9FNAg==
+"@react-three/drei@^9.40.0":
+  version "9.40.0"
+  resolved "https://registry.yarnpkg.com/@react-three/drei/-/drei-9.40.0.tgz#4b0987fe8e7a7360b4d5ea6d1d0bcf932df98248"
+  integrity sha512-v+7l62c7BIXS172E1TiEOeXXpZnfoJNsdjZK5h0TxKVXsbhs5t6rMAlDKhgWbZ96rDzgNrSIPv+GMzlG/rkFdQ==
   dependencies:
     "@babel/runtime" "^7.11.2"
     "@react-spring/three" "^9.3.1"
@@ -291,19 +298,19 @@
     stats.js "^0.17.0"
     suspend-react "^0.0.8"
     three-mesh-bvh "^0.5.15"
-    three-stdlib "2.17.0"
+    three-stdlib "^2.17.3"
     troika-three-text "^0.46.4"
     utility-types "^3.10.0"
     zustand "^3.5.13"
 
-"@react-three/fiber@^8.3.1":
-  version "8.8.9"
-  resolved "https://registry.yarnpkg.com/@react-three/fiber/-/fiber-8.8.9.tgz#365219cbad66f99589fe8f87f81eeeb278efea70"
-  integrity sha512-TGeDm6EieaQ/ckRPC0rbG0ntHjWO7xp7eLRh4ZFqQ5BzCqIO+mA3QXLzAuVItL1Y32OuBdXC28iqVHWOw2AWCw==
+"@react-three/fiber@^8.9.1":
+  version "8.9.1"
+  resolved "https://registry.yarnpkg.com/@react-three/fiber/-/fiber-8.9.1.tgz#54e278148ae1c301a4b516936bfce0d9240a7292"
+  integrity sha512-xRMO9RGp0DkxSFu5BmmkjCxJ4r0dEpLobtxXdZwI0h2rZZaCnkPM5zThRN8xaZNbZhzRSVICeNOFaZltr9xFyQ==
   dependencies:
     "@babel/runtime" "^7.17.8"
     "@types/react-reconciler" "^0.26.7"
-    its-fine "^1.0.4"
+    its-fine "^1.0.6"
     react-reconciler "^0.27.0"
     react-use-measure "^2.1.1"
     scheduler "^0.21.0"
@@ -1516,9 +1523,9 @@ dequal@^2.0.2:
   integrity sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==
 
 detect-gpu@^4.0.36:
-  version "4.0.42"
-  resolved "https://registry.yarnpkg.com/detect-gpu/-/detect-gpu-4.0.42.tgz#c549cbb5093b1eb003feef6ab3086a1be2c44ee5"
-  integrity sha512-2etUqDWJdyz47snrhciQviLcn4ogedwly7QgFJcIs6Rdiggay4MvnLNO4VjIoKSRr6MRD+JBHhYeVZANW4E5oA==
+  version "4.0.48"
+  resolved "https://registry.yarnpkg.com/detect-gpu/-/detect-gpu-4.0.48.tgz#2992c0e863933472f5bfdbbc254008332478d58d"
+  integrity sha512-qrJTrCeYG/5aaMaqHlbTZu3cTZB/TZJ/ZbDDEb712FMe5irqjGwp2fyG4ag+y19f4QGKg55dQXf8IuKo+oCmRw==
   dependencies:
     webgl-constants "^1.1.1"
 
@@ -2379,10 +2386,10 @@ isoformat@0.2:
   resolved "https://registry.yarnpkg.com/isoformat/-/isoformat-0.2.1.tgz#2526344a4276a101b2881848dc337d1d2ae74494"
   integrity sha512-tFLRAygk9NqrRPhJSnNGh7g7oaVWDwR0wKh/GM2LgmPa50Eg4UfyaCO4I8k6EqJHl1/uh2RAD6g06n5ygEnrjQ==
 
-its-fine@^1.0.4:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/its-fine/-/its-fine-1.0.5.tgz#dbd8130e021aafe030ca5001085c27ff2a057ab3"
-  integrity sha512-JVqIHuUGRF4mBJWV/o9CS86wU57oWAX+mE2iokFpZ+B1R1tcfRvLZXVFd9tWJgY7gfhBURYyXJs7LcoJl/Af+Q==
+its-fine@^1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/its-fine/-/its-fine-1.0.6.tgz#087b14d71137816dab676d8b57c35a6cd5d2b021"
+  integrity sha512-VZJZPwVT2kxe5KQv+TxCjojfLiUIut8zXDNLTxcM7gJ/xQ/bSPk5M0neZ+j3myy45KKkltY1mm1jyJgx3Fxsdg==
   dependencies:
     "@types/react-reconciler" "^0.28.0"
 
@@ -3053,6 +3060,11 @@ reduce-flatten@^2.0.0:
   resolved "https://registry.yarnpkg.com/reduce-flatten/-/reduce-flatten-2.0.0.tgz#734fd84e65f375d7ca4465c69798c25c9d10ae27"
   integrity sha512-EJ4UNY/U1t2P/2k6oqotuX2Cc3T6nxJwsM0N0asT7dhrtH1ltUxDn4NalSYmPE2rCkVpcf/X6R0wDwcFpzhd4w==
 
+regenerator-runtime@^0.13.10:
+  version "0.13.10"
+  resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.13.10.tgz#ed07b19616bcbec5da6274ebc75ae95634bfc2ee"
+  integrity sha512-KepLsg4dU12hryUO7bp/axHAKvwGOCV0sGloQtpagJ12ai+ojVDqkeGSiRX1zlq+kjIMZ1t7gpze+26QqtdGqw==
+
 regenerator-runtime@^0.13.4:
   version "0.13.9"
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.13.9.tgz#8925742a98ffd90814988d7566ad30ca3b263b52"
@@ -3424,14 +3436,14 @@ text-table@^0.2.0:
   integrity sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==
 
 three-mesh-bvh@^0.5.15:
-  version "0.5.16"
-  resolved "https://registry.yarnpkg.com/three-mesh-bvh/-/three-mesh-bvh-0.5.16.tgz#ed8518355fb70d7da6a5537558ba43f76a56b067"
-  integrity sha512-kN3QGKJNiQQcuiOsjVIkjtPnV3PJa+0Orih2E52afa+kQfs3zfoYt6Kxn6b6RNiAfaQ+7ckwPK0mTVFVl2F2LA==
+  version "0.5.17"
+  resolved "https://registry.yarnpkg.com/three-mesh-bvh/-/three-mesh-bvh-0.5.17.tgz#1f9bdcd7992e86dc3665664c1fe5cedd7be4bd9f"
+  integrity sha512-0iyqZe0Op6tH7nqVI4L2Ae1tACiYliJvx0cFvehrVzzfZRW8p4c9GYnqGPPN5+x7Q8L5WjJC8kgoA8Z+/+1oAQ==
 
-three-stdlib@2.17.0:
-  version "2.17.0"
-  resolved "https://registry.yarnpkg.com/three-stdlib/-/three-stdlib-2.17.0.tgz#5915b110ec6dbf07e0e653bd59889293c7b93407"
-  integrity sha512-m19X4+ajh+2EJIVcjB288LgbqTli5b8kFahJlg9oNCBfaL8geCgEoM4OUirgV0Ez6Lr58N1MPBR6LjJt7ALfKQ==
+three-stdlib@^2.17.3:
+  version "2.17.4"
+  resolved "https://registry.yarnpkg.com/three-stdlib/-/three-stdlib-2.17.4.tgz#7e0ac881ab893115af584f05e41fce41c9a76f0a"
+  integrity sha512-Xh9+B/1RL0YXRjWgLilbK/5qL7hVOWMF5sQ1seKqGvR4svNvQPU+vCZkL2sUaZ0usc/C3FpyGTuwbqo+eW444Q==
   dependencies:
     "@babel/runtime" "^7.16.7"
     "@types/offscreencanvas" "^2019.6.4"
