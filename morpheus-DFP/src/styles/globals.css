@@ -88,3 +88,7 @@ body {
 .rc-slider-handle:active {
   box-shadow: 0 0 5px white !important;
 }
+
+.tooltip-inner {
+  white-space: pre-wrap;
+}

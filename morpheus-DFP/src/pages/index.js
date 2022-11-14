@@ -203,7 +203,10 @@ export default class CustomD3 extends React.Component {
     const visibleUsers = {
       min: this.state.AppSettings.visibleUsers.min,
       max: numUsers.numUsers,
-      value: numUsers.numUsers,
+      value: Math.min(
+        numUsers.numUsers,
+        parseInt(process.env.NEXT_PUBLIC_visible_users_max)
+      ),
     };
     if (configValues.currentDataset == this.state.AppSettings.currentDataset) {
       visibleUsers.value = configValues.visibleUsers.value;

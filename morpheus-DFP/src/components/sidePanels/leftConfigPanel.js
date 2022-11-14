@@ -22,8 +22,8 @@ import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 import Form from "react-bootstrap/Form";
 import styles from "../../styles/components/sidePanels.module.css";
-import { ArrowClockwise } from "react-bootstrap-icons";
 import { Button } from "react-bootstrap";
+import Trigger from "../overlayTrigger";
 
 const handleStyle = {
   borderColor: "white",
@@ -114,7 +114,6 @@ function ConfigPanel({
   useInterval(async () => {
     if (config.liveUpdates) {
       const datasets_ = await requestJSON("getFiles");
-      console.log(datasets_[0], config.currentDataset, datasets);
       if (datasets_[0] != configValues.currentDataset) {
         setDatasets(datasets_);
         setConfigValues({ ...configValues, currentDataset: datasets_[0] });
@@ -126,11 +125,11 @@ function ConfigPanel({
   useEffect(() => {
     setConfigValues({
       ...configValues,
-      visibleUsers: { value: config.visibleUsers.max },
+      visibleUsers: { value: config.visibleUsers.value },
       lookBackTime: config.lookBackTime,
       timePerHex: config.timePerHex,
     });
-  }, [config.visibleUsers.max, config.lookBackTime, config.timePerHex]);
+  }, [config.visibleUsers.value, config.lookBackTime, config.timePerHex]);
 
   const refreshDatasets = () => {
     clickReload(!reload);
@@ -161,13 +160,16 @@ function ConfigPanel({
           <ListGroup.Item className={styles.listOfConfig} key={"datasets"}>
             <div className={styles.configTitle}>
               Current Dataset
-              <a href="#" onClick={refreshDatasets}>
-                <ArrowClockwise></ArrowClockwise>
-              </a>
+              <Trigger
+                className={styles.infoHover}
+                msg={"List of datasets available"}
+                iconName={"ArrowClockwise"}
+              ></Trigger>
             </div>
+
             <select
               name="currentDataset"
-              className={styles.configTools}
+              className={`${styles.configTools}`}
               value={configValues.currentDataset}
               onChange={(e) => {
                 setConfigValues({
@@ -187,7 +189,16 @@ function ConfigPanel({
           </ListGroup.Item>
 
           <ListGroup.Item className={styles.listOfConfig} key={"sort"}>
-            <div className={styles.configTitle}>Sort By (Highest on Top)</div>
+            <div className={styles.configTitle}>
+              Sort By (Highest on Top)
+              <Trigger
+                className={styles.infoHover}
+                msg={
+                  "Sort the users based on aggregate values of the anomaly scores,in a decreasing order"
+                }
+                iconName={"InfoCircle"}
+              ></Trigger>
+            </div>
             <select
               name="sortEvents"
               className={styles.configTools}
@@ -208,7 +219,20 @@ function ConfigPanel({
             className={styles.listOfConfig}
             key={"colorThreshold"}
           >
-            <div className={styles.configTitle}>Anomalous Color Threshold</div>
+            <div className={styles.configTitle}>
+              Anomalous Color Threshold
+              <Trigger
+                className={styles.infoHover}
+                msgs={[
+                  "Min and Max thresholds for anomaly values",
+                  "Max threshold: value above which events are considered anomalous",
+                  "Min threshold: value below which events are considered safe to ignore",
+                  "Events with values between Min and Max will be mapped to a color palette [red, yellow], with yellow being the most anomalous",
+                  "Anything above Max is yellow, anything below Min is light-gray, and null events are dark-gray",
+                ]}
+                iconName={"InfoCircle"}
+              ></Trigger>
+            </div>
             <Slider
               className={`${styles.configSlider}`}
               range
@@ -242,7 +266,17 @@ function ConfigPanel({
             />
           </ListGroup.Item>
           <ListGroup.Item className={styles.listOfConfig} key={"visibleUsers"}>
-            <div className={styles.configTitle}>Visible Users (Rows)</div>
+            <div className={styles.configTitle}>
+              Visible Users (Rows)
+              <Trigger
+                className={styles.infoHover}
+                msgs={[
+                  "Number of users visible.",
+                  "Default value is the minimum of max_users_in_dataset and `NEXT_PUBLIC_visible_users_max` set in .env file",
+                ]}
+                iconName={"InfoCircle"}
+              ></Trigger>
+            </div>
             <Slider
               className={`${styles.configSlider}`}
               min={config.visibleUsers.min}
@@ -271,7 +305,16 @@ function ConfigPanel({
             className={styles.listOfConfig}
             key={"timeBinPerHexagon"}
           >
-            <div className={styles.configTitle}>Time Bin Per Hexagon</div>
+            <div className={styles.configTitle}>
+              Time Bin Per Hexagon
+              <Trigger
+                className={styles.infoHover}
+                msg={
+                  "Specifies, in seconds, how much time does each hexagon aggregate"
+                }
+                iconName={"InfoCircle"}
+              ></Trigger>
+            </div>
             <Slider
               className={`${styles.configSlider}`}
               min={configValues.timePerHexRange[0]}
@@ -294,7 +337,16 @@ function ConfigPanel({
             />
           </ListGroup.Item>
           <ListGroup.Item className={styles.listOfConfig} key={"lookBackTime"}>
-            <div className={styles.configTitle}>Look Back Time</div>
+            <div className={styles.configTitle}>
+              Look Back Time
+              <Trigger
+                className={styles.infoHover}
+                msg={
+                  "Specifies, in seconds, how far to look back into the dataset, default is 1 HR(36000s)."
+                }
+                iconName={"InfoCircle"}
+              ></Trigger>
+            </div>
             <Slider
               className={`${styles.configSlider}`}
               min={config.lookBackTimeRange[0]}
@@ -340,24 +392,20 @@ function ConfigPanel({
           </ListGroup.Item>
           <div className={styles.underline}></div>
           <ListGroup.Item
-            className={`${styles.listOfConfig} ${styles.noBaseMargin}`}
-            key={"liveUpdates"}
-          >
-            <div className={styles.configTitle}>Live Updates</div>
-            <Form.Switch
-              className={`${styles.configSwitch} configSwitch`}
-              checked={config.liveUpdates}
-              onChange={(e) => {
-                updateConfig("liveUpdates", e.target.checked);
-              }}
-              label={config.liveUpdates ? "on" : "off"}
-            />
-          </ListGroup.Item>
-          <ListGroup.Item
             className={styles.listOfConfig}
             key={"updateFrequency"}
           >
-            <div className={styles.configTitle}>Update Frequency</div>
+            <div className={styles.configTitle}>
+              Update Frequency
+              <Trigger
+                className={styles.infoHover}
+                msgs={[
+                  `Fetch the data directory for latest datasets every ${configValues.updateFrequency} seconds`,
+                  "Data directory is set using the `dataset_path` environment variable",
+                ]}
+                iconName={"InfoCircle"}
+              ></Trigger>
+            </div>
             <Slider
               className={`${styles.configSlider}`}
               min={5}
@@ -379,26 +427,39 @@ function ConfigPanel({
               }}
             />
           </ListGroup.Item>
-
           <ListGroup.Item
             className={`${styles.listOfConfig} ${styles.noBaseMargin}`}
-            key={"3dPerspectiveLock"}
+            key={"liveUpdates"}
           >
-            <div className={styles.configTitle}>3d Perspective Lock</div>
+            <div className={styles.configTitle}>
+              Live Updates
+              <Trigger
+                className={styles.infoHover}
+                msg={`When turned on, fetch the data directory for latest datasets every ${configValues.updateFrequency} seconds`}
+                iconName={"InfoCircle"}
+              ></Trigger>
+            </div>
             <Form.Switch
               className={`${styles.configSwitch} configSwitch`}
-              checked={config.threeDimensionPerspectiveLock}
+              checked={config.liveUpdates}
               onChange={(e) => {
-                updateConfig("threeDimensionPerspectiveLock", e.target.checked);
+                updateConfig("liveUpdates", e.target.checked);
               }}
-              label={config.threeDimensionPerspectiveLock ? "on" : "off"}
+              label={config.liveUpdates ? "on" : "off"}
             />
           </ListGroup.Item>
           <ListGroup.Item
             className={styles.listOfConfig}
             key={"hexHeightScale"}
           >
-            <div className={styles.configTitle}>Hexagon Height</div>
+            <div className={styles.configTitle}>
+              Hexagon Height
+              <Trigger
+                className={styles.infoHover}
+                msg={`Adjust hexagon height, hold [shift] and drag on the main screen, to tilt the hexagons`}
+                iconName={"InfoCircle"}
+              ></Trigger>
+            </div>
             <Slider
               className={`${styles.configSlider}`}
               min={1}
@@ -409,13 +470,34 @@ function ConfigPanel({
               trackStyle={trackStyle}
               railStyle={railStyle}
               marks={{
-                [configValues.updateFrequency]: {
+                [config.hexHeight]: {
                   style: {
                     color: "white",
                   },
-                  label: <span>{configValues.updateFrequency} sec</span>,
+                  label: <span>{config.hexHeight}</span>,
                 },
               }}
+            />
+          </ListGroup.Item>
+          <ListGroup.Item
+            className={`${styles.listOfConfig} ${styles.noBaseMargin}`}
+            key={"3dPerspectiveLock"}
+          >
+            <div className={styles.configTitle}>
+              3d Perspective Lock{" "}
+              <Trigger
+                className={styles.infoHover}
+                msg={`When turned off, hold [shift] and drag on the main screen to tilt the hexagons in any direction`}
+                iconName={"InfoCircle"}
+              ></Trigger>
+            </div>
+            <Form.Switch
+              className={`${styles.configSwitch} configSwitch`}
+              checked={config.threeDimensionPerspectiveLock}
+              onChange={(e) => {
+                updateConfig("threeDimensionPerspectiveLock", e.target.checked);
+              }}
+              label={config.threeDimensionPerspectiveLock ? "on" : "off"}
             />
           </ListGroup.Item>
         </ListGroup>

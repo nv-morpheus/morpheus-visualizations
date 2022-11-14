@@ -62,6 +62,17 @@
   padding-bottom: 0% !important;
 }
 
+.infoHover {
+  margin-right: 5%;
+  float: right;
+  margin-bottom: 1%;
+}
+
+.infoHoverRightPanel{
+  float: right;
+  margin-bottom: 1%;
+}
+
 .configTitle {
   color: white;
   margin-left: 5%;
@@ -98,6 +109,9 @@
   border: none;
 }
 
+.configDataset {
+  width: 80% !important;
+}
 .configTools {
   background-color: #333;
   color: white;
