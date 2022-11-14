@@ -10,13 +10,15 @@ This dashboard is meant to be run after running the Morpheus Digital Fingerprint
 
 You can find more information in the [DFP Production Pipeline Example Readme](https://github.com/nv-morpheus/Morpheus/tree/branch-22.11/examples/digital_fingerprinting/visualization).
 
-## Installation
+## Requirements
 
 ### CUDA/GPU requirements
 
 - CUDA 11.0+
 - NVIDIA driver 450.80.02+
 - Pascal architecture or better (Compute Capability >=6.0)
+
+## Installation
 
 ### 1. Install the dependencies
 
