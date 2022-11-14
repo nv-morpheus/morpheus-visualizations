@@ -6,36 +6,37 @@ Visualize user access events and detect anomalies based on the anomaly score, wh
 
 ## Getting Started
 
-First, install the dependencies:
+This dashboard is meant to be run after running the Morpheus Digital Fingerprinting(DFP) pipeline on Azure and Duo log data to generate input files for visualizing.
+
+You can find more information in the [DFP Production Pipeline Example Readme](https://github.com/nv-morpheus/Morpheus/tree/branch-22.11/examples/digital_fingerprinting/visualization).
+
+## Installation
+
+### CUDA/GPU requirements
+
+- CUDA 11.0+
+- NVIDIA driver 450.80.02+
+- Pascal architecture or better (Compute Capability >=6.0)
+
+### 1. Install the dependencies
 
 ```bash
-yarn
+yarn && yarn build
 ```
 
-Then, update the `.env` file, with the absolute path where the datasets live:
+### 2. Set the data directory
+
+Set the `dataset_path` environment variable to set the data directory where the input data DFP visualization application will be periodically saved.
+
+If `dataset_path` is not set, the default data directory will be [./public/data](./public/data).
+
+### 3. Running the app
 
 ```bash
-# add path
-dataset_path=/home/~/morpheus-visualizations/morpheus-DFP/public/data
-```
-
-Then, run the development/production server:
-
-```bash
-# Development server
-npm run dev
-# or
-yarn dev
-
-# Production server
-npm run build
-npm run start
-# or
-yarn build
 yarn start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Go to [http://localhost:3000](http://localhost:3000)
 
 ## Application Screenshots
 
@@ -44,6 +45,16 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 > Event onClick info panel
 > ![homepage3](./public/home3.png)
+
+## Development
+
+To start a development server, execute the following commands:
+
+```bash
+yarn dev
+```
+
+##
 
 ## Deployment
 
