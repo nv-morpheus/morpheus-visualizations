@@ -215,7 +215,6 @@ function SidePanel({ allEvents, anomalousColorThreshold, dataset }) {
                   )}
                 </span>
                 <br></br>scaled score:
-                <br style={{ lineHeight: "200px" }}></br>
                 <Ruler
                   mean={
                     selectedEventData
