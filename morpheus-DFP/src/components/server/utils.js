@@ -487,7 +487,6 @@ export function generateData(
     const idx = tempData
       .filter(tempData.get("elevation").eq(-1))
       .get("sortIndex");
-    console.log([...tempData.get("sortIndex")], [...idx]);
     tempData = tempData.assign({
       elevation: tempData
         .get("elevation")
