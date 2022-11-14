@@ -85,11 +85,7 @@ function HexGrid3dBase({
     >
       <instancedMesh
         ref={myMesh}
-        args={[
-          null,
-          null,
-          appSettings.visibleUsers.value * appSettings.totalTime,
-        ]}
+        args={[null, null, parseInt(position.length / 16)]}
         onPointerOver={(e) => {
           e.stopPropagation();
           document.body.style.cursor = "pointer";
