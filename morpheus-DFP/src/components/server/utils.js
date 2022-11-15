@@ -336,25 +336,28 @@ export function getEventStats(df, threshold) {
     .count()
     .select(["time", "user"])
     .sortValues({ time: { ascending: false } })
-    .rename({ user: "count" })
-    .toArrow()
-    .toArray();
-  const anomalousEvents = df
-    .filter(df.get("anomalyScore_scaled").ge(threshold))
-    .groupBy({ by: "time" })
-    .count()
-    .select(["time", "user"])
-    .sortValues({ time: { ascending: false } })
-    .rename({ user: "count" })
-    .toArrow()
-    .toArray();
-
+    .rename({ user: "count" });
+  const anomalousEvents = totalEvents
+    .join({
+      other: df
+        .filter(df.get("anomalyScore_scaled").ge(threshold))
+        .groupBy({ by: "time" })
+        .count()
+        .select(["time", "user"])
+        .rename({ user: "count" }),
+      on: ["time"],
+      how: "left",
+      lsuffix: "_l",
+    })
+    .drop(["count_l"])
+    .replaceNulls(0)
+    .sortValues({ time: { ascending: false } });
   return {
-    totalEvents: totalEvents.reduce(
+    totalEvents: [...totalEvents.toArrow()].reduce(
       (map, value) => map.concat([Object.values(value)]),
       []
     ),
-    anomalousEvents: anomalousEvents.reduce(
+    anomalousEvents: [...anomalousEvents.toArrow()].reduce(
       (map, value) => map.concat([Object.values(value)]),
       []
     ),
