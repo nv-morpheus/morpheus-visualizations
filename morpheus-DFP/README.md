@@ -10,6 +10,8 @@ This dashboard is meant to be run after running the Morpheus Digital Fingerprint
 
 You can find more information in the [DFP Production Pipeline Example Readme](https://github.com/nv-morpheus/Morpheus/tree/branch-22.11/examples/digital_fingerprinting/visualization).
 
+The application backend compute is powered by the NODE RAPIDS (specifically @rapidsai/cudf) packages. More information about node-rapids can be found [here](https://github.com/rapidsai/node).
+
 ## Requirements
 
 ### CUDA/GPU requirements
@@ -20,8 +22,12 @@ You can find more information in the [DFP Production Pipeline Example Readme](ht
 
 ### OS requirements
 
-- Server: See the [Get Rapids](https://rapids.ai/start.html#requirements) for information on compatible OS.
+- Server: See the [Rapids System Requirements section](https://rapids.ai/start.html#requirements) for information on compatible OS.
 - Client: Chrome(tested on v107) / firefox(tested on v106) / safari (tested on v15)
+
+### RAPIDS
+
+- @rapidsai/cudf ([dev](https://github.com/rapidsai/node/tree/main/modules/cudf), [npm](https://www.npmjs.com/package/@rapidsai/cudf))
 
 ## Installation
 
