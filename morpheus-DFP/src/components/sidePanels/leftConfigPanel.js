@@ -128,12 +128,27 @@ function ConfigPanel({
       visibleUsers: { value: config.visibleUsers.value },
       lookBackTime: config.lookBackTime,
       timePerHex: config.timePerHex,
+      colorThreshold: config.anomalousColorThreshold.map((x) => x * 100),
     });
-  }, [config.visibleUsers.value, config.lookBackTime, config.timePerHex]);
+  }, [
+    config.visibleUsers.value,
+    config.lookBackTime,
+    config.timePerHex,
+    config.anomalousColorThreshold,
+  ]);
 
-  const refreshDatasets = () => {
-    clickReload(!reload);
-  };
+  useEffect(() => {
+    if (!show) {
+      console.log("side panel closed");
+      setConfigValues({
+        ...configValues,
+        colorThreshold: config.anomalousColorThreshold.map((x) => x * 100),
+        visibleUsers: { value: config.visibleUsers.value },
+        timePerHex: parseInt(config.timePerHex), //seconds
+        lookBackTime: config.lookBackTime, //seconds
+      });
+    }
+  }, [show]);
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
@@ -238,13 +253,9 @@ function ConfigPanel({
               range
               min={0}
               max={100}
-              defaultValue={configValues.colorThreshold}
+              value={configValues.colorThreshold}
               onChange={(e) => {
                 setConfigValues({ ...configValues, colorThreshold: e });
-                updateConfig(
-                  "anomalousColorThreshold",
-                  e.map((x) => x / 100)
-                );
               }}
               handleStyle={[handleStyle, handleStyle]}
               trackStyle={trackStyle}

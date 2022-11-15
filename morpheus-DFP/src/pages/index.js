@@ -208,10 +208,15 @@ export default class CustomD3 extends React.Component {
         parseInt(process.env.NEXT_PUBLIC_visible_users_max)
       ),
     };
+
+    let anomalousColorThreshold =
+      this.state.AppSettings.anomalousColorThreshold;
+
     if (configValues.currentDataset == this.state.AppSettings.currentDataset) {
       visibleUsers.value = configValues.visibleUsers.value;
       lookBackTime = configValues.lookBackTime;
       timePerHex = configValues.timePerHex;
+      anomalousColorThreshold = configValues.colorThreshold.map((x) => x / 100);
     }
 
     await this.promisedSetState({
@@ -223,6 +228,7 @@ export default class CustomD3 extends React.Component {
         lookBackTimeRange,
         lookBackTime,
         timePerHex,
+        anomalousColorThreshold,
       },
     });
 
