@@ -40,7 +40,11 @@ function AreaChart({ totalEvents, anomalousEvents }) {
       top: "5%",
       left: "2%",
     },
-    color: ["#f73d0a", "#ffffff"],
+    color: ["#ffffff", "#f73d0a"],
+    tooltip: {
+      backgroundColor: "rgba(211, 211, 211, 0.8)",
+      textStyle: { color: "rgba(33,33,33)" },
+    },
     legend: {
       data: [
         {
