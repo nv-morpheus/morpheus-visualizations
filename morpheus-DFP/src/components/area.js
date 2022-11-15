@@ -93,29 +93,6 @@ function AreaChart({ totalEvents, anomalousEvents }) {
     },
     series: [
       {
-        name: "Anomalous Traffic",
-        type: "line",
-        symbol: "none",
-        stack: false,
-        lineStyle: {
-          width: 0.7,
-        },
-        areaStyle: {
-          opacity: 1,
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1.5, [
-            {
-              offset: 0,
-              color: "#f73d0a",
-            },
-            {
-              offset: 1,
-              color: "#000000",
-            },
-          ]),
-        },
-        data: anomalousEvents,
-      },
-      {
         name: "Network Traffic",
         type: "line",
         symbol: "none",
@@ -138,6 +115,29 @@ function AreaChart({ totalEvents, anomalousEvents }) {
           ]),
         },
         data: totalEvents,
+      },
+      {
+        name: "Anomalous Traffic",
+        type: "line",
+        symbol: "none",
+        stack: false,
+        lineStyle: {
+          width: 0.7,
+        },
+        areaStyle: {
+          opacity: 1,
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1.5, [
+            {
+              offset: 0,
+              color: "#f73d0a",
+            },
+            {
+              offset: 1,
+              color: "#000000",
+            },
+          ]),
+        },
+        data: anomalousEvents,
       },
     ],
     notMerge: true,
