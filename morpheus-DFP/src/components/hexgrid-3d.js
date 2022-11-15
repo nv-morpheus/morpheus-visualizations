@@ -18,6 +18,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 import { OrthographicCamera, MapControls } from "@react-three/drei";
+import Alert from "react-bootstrap/Alert";
 import { Text } from "@react-three/drei";
 import TimeAxis3D from "./timeAxis3D";
 import styles from "../styles/components/hexgrid.module.css";
@@ -45,6 +46,7 @@ function HexGrid3dBase({
   currentDataset,
   setEvents,
   hexHeight,
+  setClickToast,
 }) {
   const myMesh = useRef();
   const globalMesh = useRef();
@@ -52,6 +54,7 @@ function HexGrid3dBase({
   const [previousSelectedEvent, setPreviousSelectedEvent] = useState({
     instanceId: -1,
   });
+  const [infoToastDisplayed, setInfoToastDisplayed] = useState(false);
 
   useEffect(() => {
     geo.current.translate(0, hexHeight / 2, 0);
@@ -96,6 +99,11 @@ function HexGrid3dBase({
         }}
         onClick={async (e) => {
           e.stopPropagation();
+          // display info toast on 1st click
+          if (!infoToastDisplayed) {
+            setClickToast(true);
+            setInfoToastDisplayed(true);
+          }
           setLoadingIndicator(true);
           const id = e.instanceId;
           if (id !== selectedEvent.instanceId) {
@@ -174,12 +182,52 @@ export function HexGrid3d({
   const controlsRef = useRef();
   const cameraRef = useRef();
   const [args, setArgs] = useState([0, 0, 0, 0, 0, 0]);
+  const [rightToast, setRightToast] = useState(true);
+  const [leftToast, setLeftToast] = useState(0);
+
   const cameraPostion = [0, 500, 4];
 
   function resetControls() {
     controlsRef.current && controlsRef.current.reset();
     cameraRef.current && (cameraRef.current.zoom = 1);
     resetSelected();
+  }
+
+  function infoToast(direction = "right") {
+    if (direction == "right") {
+      return rightToast ? (
+        <>
+          <Alert
+            variant="dark"
+            onClose={() => setRightToast(false)}
+            className={`${styles.toastMessage} ${styles.rightAlign}`}
+            dismissible
+          >
+            <p>
+              You can tilt the view by holding [shift] + dragging. Double click
+              to reset position!
+            </p>
+          </Alert>
+        </>
+      ) : (
+        <></>
+      );
+    } else {
+      return leftToast == 1 ? (
+        <>
+          <Alert
+            variant="dark"
+            onClose={() => setLeftToast(false)}
+            className={styles.toastMessage}
+            dismissible
+          >
+            <p>Double click to reset clicked event!</p>
+          </Alert>
+        </>
+      ) : (
+        <></>
+      );
+    }
   }
 
   useEffect(() => {
@@ -203,6 +251,8 @@ export function HexGrid3d({
 
   return (
     <div id={styles.hexBox}>
+      {infoToast("right")}
+      {infoToast("left")}
       <Canvas
         id={styles.hexgridCanvas}
         linear={true}
@@ -228,6 +278,7 @@ export function HexGrid3d({
             timestamps={timestamps}
             currentDataset={currentDataset}
             hexHeight={hexHeight}
+            setClickToast={setLeftToast}
           />
         ) : (
           <></>

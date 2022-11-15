@@ -24,3 +24,14 @@
   height: 100vh;
   position: absolute;
 }
+
+.toastMessage {
+  position: absolute;
+  z-index: 100;
+  opacity: 0.8;
+  padding-bottom: 0;
+}
+
+.rightAlign {
+  margin-left: 85%;
+}
