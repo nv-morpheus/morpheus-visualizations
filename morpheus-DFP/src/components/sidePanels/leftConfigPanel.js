@@ -87,6 +87,7 @@ function ConfigPanel({
   const [show, setShow] = useState(false);
   const [datasets, setDatasets] = useState([]);
   const [reload, clickReload] = useState(false);
+  const [changedApplied, setChangesApplied] = useState(true);
   const [configValues, setConfigValues] = useState({
     colorThreshold: config.anomalousColorThreshold.map((x) => x * 100),
     visibleUsers: { value: config.visibleUsers.value },
@@ -94,6 +95,7 @@ function ConfigPanel({
     timePerHex: parseInt(config.timePerHex), //seconds
     lookBackTime: config.lookBackTime, //seconds
     timePerHexRange: eval(process.env.NEXT_PUBLIC_time_bin_per_hex_range),
+    currentDataset: null,
   });
 
   async function reloadDatasets() {
@@ -191,6 +193,7 @@ function ConfigPanel({
                   ...configValues,
                   currentDataset: e.target.value,
                 });
+                setChangesApplied(false);
               }}
             >
               {datasets.map((dataset, i) => {
@@ -220,6 +223,7 @@ function ConfigPanel({
               value={config.sortBy}
               onChange={(e) => {
                 updateConfig("sortBy", e.target.value);
+                setChangesApplied(false);
               }}
             >
               <option value={"sum"}>Sum of Anomalous Scores</option>
@@ -256,6 +260,7 @@ function ConfigPanel({
               value={configValues.colorThreshold}
               onChange={(e) => {
                 setConfigValues({ ...configValues, colorThreshold: e });
+                setChangesApplied(false);
               }}
               handleStyle={[handleStyle, handleStyle]}
               trackStyle={trackStyle}
@@ -298,6 +303,7 @@ function ConfigPanel({
                   ...configValues,
                   visibleUsers: { value: e },
                 });
+                setChangesApplied(false);
               }}
               handleStyle={handleStyle}
               trackStyle={trackStyle}
@@ -333,6 +339,7 @@ function ConfigPanel({
               value={configValues.timePerHex}
               onChange={(e) => {
                 setConfigValues({ ...configValues, timePerHex: e });
+                setChangesApplied(false);
               }}
               handleStyle={handleStyle}
               trackStyle={trackStyle}
@@ -365,6 +372,7 @@ function ConfigPanel({
               value={configValues.lookBackTime}
               onChange={(e) => {
                 setConfigValues({ ...configValues, lookBackTime: e });
+                setChangesApplied(false);
               }}
               handleStyle={handleStyle}
               trackStyle={trackStyle}
@@ -395,7 +403,9 @@ function ConfigPanel({
                 onClick={() => {
                   setLoadingIndicator(true);
                   reloadCharts(configValues);
+                  setChangesApplied(true);
                 }}
+                disabled={changedApplied}
               >
                 Apply
               </Button>
