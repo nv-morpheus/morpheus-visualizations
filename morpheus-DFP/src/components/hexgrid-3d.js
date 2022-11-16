@@ -290,6 +290,8 @@ export function HexGrid3d({
           ref={controlsRef}
           minDistance={0}
           maxDistance={5000}
+          maxZoom={10}
+          minZoom={0.3}
           maxPolarAngle={Math.PI / 2}
           minAzimuthAngle={
             appSettings.threeDimensionPerspectiveLock ? 0 : Math.PI / 2
