@@ -396,19 +396,26 @@ function ConfigPanel({
                 className={styles.loadingIcon}
               />
             ) : (
-              <Button
-                variant="secondary"
-                size="sm"
-                className={styles.configButton}
-                onClick={() => {
-                  setLoadingIndicator(true);
-                  reloadCharts(configValues);
-                  setChangesApplied(true);
-                }}
-                disabled={changedApplied}
+              <span
+                tabIndex="0"
+                className={`d-inline-block ${styles.fullWidth}`}
+                data-bs-toggle="tooltip"
+                title={changedApplied ? "Settings already applied!" : ""}
               >
-                Apply
-              </Button>
+                <Button
+                  variant="secondary"
+                  className={`${styles.configButton}`}
+                  size="sm"
+                  onClick={() => {
+                    setLoadingIndicator(true);
+                    reloadCharts(configValues);
+                    setChangesApplied(true);
+                  }}
+                  disabled={changedApplied}
+                >
+                  Apply
+                </Button>
+              </span>
             )}
           </ListGroup.Item>
           <div className={styles.underline}></div>

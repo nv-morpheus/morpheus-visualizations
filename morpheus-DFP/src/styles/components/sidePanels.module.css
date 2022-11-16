@@ -68,7 +68,7 @@
   margin-bottom: 1%;
 }
 
-.infoHoverRightPanel{
+.infoHoverRightPanel {
   float: right;
   margin-bottom: 1%;
 }
@@ -94,6 +94,10 @@
   width: 50% !important;
   margin-right: 5% !important;
   float: right;
+}
+
+.fullWidth {
+  width: 100%;
 }
 
 .loadingIcon {
