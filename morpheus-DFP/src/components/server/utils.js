@@ -214,7 +214,7 @@ export function offsetBasedGridData(df, hexRadius, numUsers) {
     }),
     anomaly_scoreMax: Series.sequence({
       step: 0,
-      init: 0,
+      init: -1,
       type: new Float32(),
       size: numUsers * maxTime,
     }),
@@ -476,6 +476,13 @@ export function generateData(
     }
   });
   if (type == "colors") {
+    const idx = tempData
+      .filter(tempData.get("anomaly_scoreMax").eq(-1))
+      .get("sortIndex");
+    tempData = tempData.assign({
+      anomaly_scoreMax: tempData.get("anomaly_scoreMax").scatter(null, idx),
+    });
+
     const colors = mapValuesToColorSeries(
       tempData.get("anomaly_scoreMax"),
       [colorThreshold[0], colorThreshold[1], 0.01],
