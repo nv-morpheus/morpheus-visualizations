@@ -29,6 +29,16 @@ The application backend compute is powered by the NODE RAPIDS (specifically @rap
 
 - @rapidsai/cudf ([dev](https://github.com/rapidsai/node/tree/main/modules/cudf), [npm](https://www.npmjs.com/package/@rapidsai/cudf))
 
+### Data format
+
+The DFP visualization application expects the data to be in tabular(dataframe) format saved as either `.csv` or `.parquet` files. While the attributes `user`, `time` and `anomalyScore` are mandatory, optional attributes per event are expected to have a `_score` suffix.
+
+Sample dataset:
+
+| user            | time                        | attr1_score | attr2_score | attr3_score | attr4_score | anomalyScore |
+| --------------- | --------------------------- | ----------- | ----------- | ----------- | ----------- | ------------ |
+| test@domain.com | 2022-08-31T04:41:40.618981Z | 0.40957585  | 0.39827988  | 0.34262872  | 1.0594267   | 0.42107645   |
+
 ## Installation
 
 ### 1. Install the dependencies
@@ -134,10 +144,10 @@ Make sure to install the [latest `yarn` package](https://classic.yarnpkg.com/lan
 
 ## Screenshots
 
-> Configuration Panel
+> Settings Menu
 > ![homepage2](./public/home2.png)
 
-> Event onClick info panel
+> Event Details
 > ![homepage3](./public/home3.png)
 
 ## Development
