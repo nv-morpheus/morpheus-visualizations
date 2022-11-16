@@ -108,7 +108,6 @@ function SidePanel({ allEvents, anomalousColorThreshold, dataset }) {
               name="events"
               id={styles.eventsDropDown}
               onChange={(e) => {
-                console.log("event", e.target.value);
                 setSelectedEvent(e.target.value);
               }}
               value={selectedEvent}

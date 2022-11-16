@@ -86,7 +86,7 @@ async function computeMeanScores(datasetName, df) {
 }
 
 async function readDataset(datasetName, timePerHexBin) {
-  console.log("called readDataset");
+  console.log(`reading ${datasetName} ...`);
   let fn = DataFrame.readParquet;
   if (process.env.dataset_path) {
     datasetName = path.join(process.env.dataset_path, datasetName);
