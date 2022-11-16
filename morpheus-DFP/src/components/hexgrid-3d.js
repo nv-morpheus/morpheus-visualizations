@@ -68,17 +68,17 @@ function HexGrid3dBase({
   }, [position]);
 
   useEffect(() => {
+    position[previousSelectedEvent.instanceId * 16 + 0] = 1;
+    position[previousSelectedEvent.instanceId * 16 + 10] = 1;
     if (selectedEvent.instanceId != -1) {
-      position[previousSelectedEvent.instanceId * 16 + 0] = 1;
-      position[previousSelectedEvent.instanceId * 16 + 10] = 1;
       position[selectedEvent.instanceId * 16 + 0] = 0.7;
       position[selectedEvent.instanceId * 16 + 10] = 0.7;
       setPreviousSelectedEvent(selectedEvent);
-      myMesh.current.instanceMatrix = new THREE.InstancedBufferAttribute(
-        position,
-        16
-      );
     }
+    myMesh.current.instanceMatrix = new THREE.InstancedBufferAttribute(
+      position,
+      16
+    );
   }, [position, selectedEvent]);
 
   return (
