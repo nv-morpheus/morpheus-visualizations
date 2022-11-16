@@ -178,6 +178,7 @@ function ConfigPanel({
                 className={styles.infoHover}
                 msg={"List of datasets available"}
                 iconName={"ArrowClockwise"}
+                onClick={() => clickReload(!reload)}
               ></Trigger>
             </div>
 

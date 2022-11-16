@@ -7,7 +7,14 @@ const Icon = ({ iconName, ...props }) => {
   return <BootstrapIcon {...props} />;
 };
 
-function Trigger({ msg, msgs = [], className, iconName, placement = "right" }) {
+function Trigger({
+  msg,
+  msgs = [],
+  className,
+  iconName,
+  placement = "right",
+  onClick = null,
+}) {
   const renderTooltip = (props) => (
     <Tooltip id="button-tooltip" {...props}>
       {msgs.length == 0 ? <span>{msg}</span> : msgs.map((m) => <p>{m}</p>)}
@@ -21,7 +28,7 @@ function Trigger({ msg, msgs = [], className, iconName, placement = "right" }) {
         delay={{ show: 250, hide: 400 }}
         overlay={renderTooltip}
       >
-        <a href="#">
+        <a href="#" onClick={onClick}>
           <Icon iconName={iconName} color={"white"} size={15} />
         </a>
       </OverlayTrigger>
