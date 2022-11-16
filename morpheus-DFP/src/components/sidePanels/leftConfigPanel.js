@@ -139,7 +139,6 @@ function ConfigPanel({
 
   useEffect(() => {
     if (!show) {
-      console.log("side panel closed");
       setConfigValues({
         ...configValues,
         colorThreshold: config.anomalousColorThreshold.map((x) => x * 100),
