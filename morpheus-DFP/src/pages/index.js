@@ -155,7 +155,7 @@ export default class CustomD3 extends React.Component {
     ) {
       this.setState({
         notifications:
-          "Not all data is visible at the moment (toggle the following settings: Look Back Time, Time Bin Per Hexagon",
+          "Not all data is visible at the moment (toggle the following settings: Look Back Time, Time Bin Per Hexagon)",
       });
     } else {
       this.setState({
