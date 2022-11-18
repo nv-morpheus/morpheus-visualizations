@@ -1,14 +1,11 @@
-```shell
-# Run the following to perform a clean build (Can be skipped for incremental builds)
-rm -rf node_modules
+# Morpheus Visualizations
 
-# Install all dependencies
-yarn
+This repository contains the following morpheus visualization applications:
 
-# Build the demo
-MAKE_DEB=1 \
-MAKE_RPM=1 \
-MAKE_ZIP=1 \
-MAKE_APPIMAGE=1 \
-yarn make
-```
+### 1. Morpheus Digital Finger Print Visualization Tool
+
+A web application to visualize user access events and detect anomalies based on the anomaly score, while also tracking down anomalous patterns amongst all users.
+
+### 2. Morpheus Graph Visualization Tool
+
+SID Visualization application(electron app), to be run alongside Morpheus. More information can be found [here](https://github.com/nv-morpheus/Morpheus/tree/branch-22.11/examples/sid_visualization)
