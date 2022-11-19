@@ -1,0 +1,36 @@
+{
+  "name": "morpheus-fingerprint-viz",
+  "version": "22.11.00",
+  "private": true,
+  "scripts": {
+    "dev": "CUDA_VISIBLE_DEVICES=0 next dev",
+    "build": "next build",
+    "start": "CUDA_VISIBLE_DEVICES=0 next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@observablehq/plot": "^0.6.0",
+    "@rapidsai/cudf": "^22.8.1",
+    "@react-three/drei": "^9.40.0",
+    "@react-three/fiber": "^8.9.1",
+    "apache-arrow": "^9.0.0",
+    "bootstrap": "^5.2.0",
+    "d3-node": "^3.0.0",
+    "echarts": "^5.4.0",
+    "echarts-for-react": "^3.0.2",
+    "next": "^12.0.0",
+    "next-transpile-modules": "^9.1.0",
+    "node-cache": "5.1.2",
+    "rc-slider": "^10.0.1",
+    "react": "^18.2.0",
+    "react-bootstrap": "^2.5.0",
+    "react-bootstrap-icons": "^1.9.1",
+    "react-dom": "^18.2.0",
+    "sharp": "0.31.2",
+    "three": "^0.146.0"
+  },
+  "devDependencies": {
+    "eslint": "8.20.0",
+    "eslint-config-next": "12.2.2"
+  }
+}

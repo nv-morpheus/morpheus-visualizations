@@ -1,0 +1,65 @@
+{
+  "folders": [
+    {
+      "name": "morpheus-visualizations",
+      "path": "./"
+    },
+    {
+      "name": "DFP",
+      "path": "./DFP"
+    },
+    {
+      "name": "GraphVis",
+      "path": "./GraphVis"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "node_modules/": true,
+      ".next/": true
+    },
+    "files.watcherExclude": {
+      "**/.git/objects/**": true,
+      "**/.git/subtree-cache/**": true,
+      "**/build/**": true,
+      "**/.next/**": true,
+      "**/.cache/**": true,
+      "**/.cmake-js/**": true,
+      "**/node_modules/**": true
+    },
+    // Configure the xaver.clang-format plugin
+    "clang-format.fallbackStyle": "Google",
+    "clang-format.executable": "clang-format-12",
+    "clang-format.language.javascript.enable": true,
+    "clang-format.language.typescript.enable": true,
+    "[json]": {
+      "editor.tabSize": 2,
+      "editor.formatOnSave": true,
+      "editor.insertSpaces": true,
+      "editor.formatOnSaveMode": "file",
+      "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[javascript]": {
+      "editor.tabSize": 2,
+      "editor.formatOnSave": true,
+      "editor.insertSpaces": true,
+      "editor.formatOnSaveMode": "file",
+      "editor.defaultFormatter": "xaver.clang-format"
+    },
+    "[typescript]": {
+      "editor.tabSize": 2,
+      "editor.formatOnSave": true,
+      "editor.insertSpaces": true,
+      "editor.formatOnSaveMode": "file",
+      "editor.defaultFormatter": "xaver.clang-format"
+    },
+    "[typescriptreact]": {
+      "editor.tabSize": 2,
+      "editor.formatOnSave": true,
+      "editor.insertSpaces": true,
+      "editor.formatOnSaveMode": "file",
+      "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "git.ignoreLimitWarning": true
+  }
+}

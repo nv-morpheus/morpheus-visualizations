@@ -1,0 +1,169 @@
+/*
+ Copyright (c) 2022, NVIDIA CORPORATION.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
+
+.customHeader {
+  float: left;
+  color: #f2f2f2;
+  width: 100%;
+  padding-top: 14px;
+  padding-bottom: 5px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.colorBarAxis {
+  display: inline-block;
+  vertical-align: top;
+  color: #f2f2f2;
+}
+
+.underline {
+  border-bottom: solid 1px gray;
+}
+
+.listOfConfig {
+  background-color: #0f0f0f !important;
+  padding: 20px 0px !important;
+  border: none;
+}
+
+.listOfAttributes {
+  background-color: #0f0f0f !important;
+  padding: 5px 0px !important;
+  border: none;
+}
+
+.selectedEventTitle {
+  color: gray;
+  /* padding: 0px; */
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.selectedEvent {
+  color: #f2f2f2;
+}
+
+.noBaseMargin {
+  padding-bottom: 0% !important;
+}
+
+.infoHover {
+  margin-right: 5%;
+  float: right;
+  margin-bottom: 1%;
+}
+
+.infoHoverRightPanel {
+  float: right;
+  margin-bottom: 1%;
+}
+
+.configTitle {
+  color: white;
+  margin-left: 5%;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.configSwitch label {
+  color: white;
+}
+
+.configSlider {
+  background-color: #0f0f0f;
+  width: 88% !important;
+  margin-left: 5% !important;
+}
+
+.configButton {
+  width: 50% !important;
+  margin-right: 5% !important;
+  float: right;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.loadingIcon {
+  float: right;
+  margin-top: 2%;
+  margin-right: 25%;
+}
+
+.configSwitch {
+  background-color: #0f0f0f;
+  width: 10% !important;
+  margin-left: 5% !important;
+  border: none;
+}
+
+.configDataset {
+  width: 80% !important;
+}
+.configTools {
+  background-color: #333;
+  color: white;
+  width: 90%;
+  margin: 0px 5%;
+}
+
+#configPanel {
+  overflow-y: auto;
+  width: 340px;
+  height: 91vh;
+  background-color: #0f0f0f !important;
+  box-shadow: 1px 1px 0f0f0f;
+  margin-left: 0;
+  color: white;
+  opacity: 0.95;
+  border-style: none;
+  margin-top: 6vh;
+}
+
+#infoPanel {
+  overflow-y: auto;
+  width: 350px;
+  height: 69vh;
+  background-color: #0f0f0f !important;
+  box-shadow: 1px 1px 0f0f0f;
+  color: white;
+  opacity: 0.9;
+  margin-top: 28vh;
+}
+
+#infoPanelBody {
+  /* margin-top: 10px; */
+  padding: 19px;
+  padding-top: 0px;
+}
+
+#eventsDropDown {
+  background-color: #333;
+  color: white;
+  width: 100%;
+  float: right;
+}
+
+#colorBarAnomalousScale {
+  height: 18px;
+  margin-top: 0;
+  margin-bottom: 0;
+  opacity: 1;
+  border: solid 0.1px #333;
+}
