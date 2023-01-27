@@ -15,6 +15,9 @@ USER root
 
 SHELL ["/bin/bash", "-Eeox", "pipefail", "-c"]
 
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null \
+    && echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
+
 RUN apt update \
  && DEBIAN_FRONTEND=noninteractive \
     apt install -y --no-install-recommends \
