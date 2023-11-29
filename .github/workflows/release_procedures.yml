@@ -22,12 +22,14 @@ on:
         description: 'Current full version of the project expressed as a JSON array (e.g. "[23, 11, 00]")'
         required: true
         type: string
+        default: "[23, 11, 00]"
       next_version_array:
-        description: 'Next full version of the project  (e.g. 24.03.00)'
+        description: 'Next full version of the project as a JSON array (e.g. "[24, 03, 00]")'
         required: true
         type: string
+        default: "[24, 03, 00]"
       create_codefreeze_pr:
-        description: 'Creates/Updates the codefreeze PR'
+        description: 'Create/Update the codefreeze PR'
         required: true
         type: boolean
         default: false
@@ -56,9 +58,9 @@ env:
   GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_PAT }}
   REPO_NAME: 'morpheus-visualizations'
   CURRENT_VERSION: ${{ format('{0}.{1}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1]) }}
-  CURRENT_FULL_VERSION: ${{ format('{0}.{1}.{2]}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1], fromJson(inputs.current_version_array)[2]) }}
+  CURRENT_FULL_VERSION: ${{ format('{0}.{1}.{2}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1], fromJson(inputs.current_version_array)[2]) }}
   NEXT_VERSION: ${{ format('{0}.{1}', fromJson(inputs.next_version_array)[0], fromJson(inputs.next_version_array)[1]) }}
-  NEXT_FULL_VERSION: ${{ format('{0}.{1}.{2]}', fromJson(inputs.next_version_array)[0], fromJson(inputs.next_version_array)[1], fromJson(inputs.next_version_array)[2]) }}
+  NEXT_FULL_VERSION: ${{ format('{0}.{1}.{2}', fromJson(inputs.next_version_array)[0], fromJson(inputs.next_version_array)[1], fromJson(inputs.next_version_array)[2]) }}
 
 jobs:
   create_codefreeze_pr:
