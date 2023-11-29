@@ -1,0 +1,198 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Release Procedures
+
+on:
+  workflow_dispatch:
+    inputs:
+      current_version_array:
+        description: 'Current full version of the project expressed as a JSON array (e.g. "[23, 11, 00]")'
+        required: true
+        type: string
+      next_version_array:
+        description: 'Next full version of the project  (e.g. 24.03.00)'
+        required: true
+        type: string
+      create_codefreeze_pr:
+        description: 'Creates/Updates the codefreeze PR'
+        required: true
+        type: boolean
+        default: false
+      create_next_release_branch:
+        description: 'Creates the next release branch and configures tags'
+        required: true
+        type: boolean
+        default: false
+      update_next_release_versions:
+        description: 'Runs the update-version script and creates a PR with the changes'
+        required: true
+        type: boolean
+        default: false
+      update_changelog:
+        description: 'Updates the CHANGELOG.md file for the current release and commits the changes'
+        required: true
+        type: boolean
+        default: false
+      merge_release_branch:
+        description: 'Merges the code freeze release branch, creates the release tag, and creates a new Github release'
+        required: true
+        type: boolean
+        default: false
+
+env:
+  GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_PAT }}
+  REPO_NAME: 'morpheus-visualizations'
+  CURRENT_VERSION: ${{ format('{0}.{1}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1]) }}
+  CURRENT_FULL_VERSION: ${{ format('{0}.{1}.{2]}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1], fromJson(inputs.current_version_array)[2]) }}
+  NEXT_VERSION: ${{ format('{0}.{1}', fromJson(inputs.next_version_array)[0], fromJson(inputs.next_version_array)[1]) }}
+  NEXT_FULL_VERSION: ${{ format('{0}.{1}.{2]}', fromJson(inputs.next_version_array)[0], fromJson(inputs.next_version_array)[1], fromJson(inputs.next_version_array)[2]) }}
+
+jobs:
+  create_codefreeze_pr:
+    if: ${{ inputs.create_codefreeze_pr }}
+    name: Create Codefreeze PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: ${REPO_NAME}
+          ref: branch-${CURRENT_VERSION}
+          sparse-checkout: |
+            ci/release
+      - name: Create PR
+        run: |
+          cat ci/release/pr_code_freeze_template.md | envsubst | \
+            gh pr create --base main --head branch-${CURRENT_VERSION} \
+              --title "[RELEASE] ${REPO_NAME} v${CURRENT_VERSION}" \
+              --body-file - \
+              --label "! - Release"
+  create_next_release_branch:
+    if: ${{ inputs.create_next_release_branch }}
+    name: Create Next Release Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          path: ${REPO_NAME}
+          ref: branch-${CURRENT_VERSION}
+          fetch-depth: 0 # Fetch all history for all tags and branches
+      - name: Setup Git user
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+      - name: Create branch
+        run: |
+          git checkout -b branch-${NEXT_VERSION}
+          git commit --allow-empty -m "Creating branch for v${NEXT_VERSION}"
+          git tag -a -m "Alpha release of v${NEXT_VERSION}" v${NEXT_FULL_VERSION}a
+          git push origin branch-${NEXT_VERSION} v${NEXT_FULL_VERSION}a
+      - name: Set default branch
+        run: |
+          gh repo edit --default-branch branch-${NEXT_VERSION}
+
+  update_next_release_versions:
+    if: ${{ inputs.update_next_release_versions }}
+    name: Update Next Release Versions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: ${REPO_NAME}
+          ref: branch-${NEXT_VERSION}
+          fetch-depth: 0 # Fetch all history for all tags and branches
+      - name: Setup Git user
+        run: |
+          git config user.name github-actions
+          git config user.email
+      - name: Run update script
+        run: |
+          # Create a new branch for the update-versions changes
+          git checkout -b update-versions-${NEXT_FULL_VERSION}
+
+          # Run the update-versions script and commit all changes
+          ./ci/release/update-version.sh ${CURRENT_FULL_VERSION} ${NEXT_FULL_VERSION}
+          git add .
+          git commit -m "Updating versions for v${NEXT_FULL_VERSION}"
+
+          # Push the changes
+          git push origin update-versions-${NEXT_FULL_VERSION}
+
+          # Create a PR using the gh CLI
+          gh pr create --title "Update Versions for v${NEXT_FULL_VERSION}" \
+            --body "This PR contains the changes from running the \`ci/release/update-version.sh\` script for a new release" \
+            --repo nv-morpheus/${REPO_NAME} \
+            --project "Morpheus Boards" \
+            --base branch-${NEXT_VERSION} \
+            --label "non-breaking" \
+            --label "improvement"
+
+  update_changelog:
+    if: ${{ inputs.update_changelog }}
+    name: Update Changelog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: ${REPO_NAME}
+          ref: branch-${CURRENT_VERSION}
+      - name: Setup Git user
+        run: |
+          git config user.name github-actions
+          git config user.email
+      - name: Update the CHANGELOG.md file
+        run: |
+          echo "Not implemented yet"
+
+  merge_release_branch:
+    if: ${{ inputs.merge_release_branch }}
+    name: Merge Release Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find Matching Release PRs
+        id: find_matching_prs
+        run: |
+          PR_LIST=$(gh pr list --repo nv-morpheus/${REPO_NAME} --base main --head branch-${CURRENT_VERSION} --label "!Release" --state open --json number')
+          if [[ $(echo "${PR_LIST}" | jq length) != 1 ]]; then
+            echo "::error Found multiple PRs for the current release. Please close all but one PR and try again. Matched PRs: ${PR_LIST}"
+            exit 1
+          fi
+
+          # Save the PR number to an output variable
+          echo "pr_number=$(echo "${PR_LIST}" | jq -r '.[0].number')"" >> $GITHUB_OUTPUT
+      - name: Merge the release PR
+        run: |
+          PR_NUMBER=${{ steps.find_matching_prs.outputs.pr_number }}
+          gh pr merge ${PR_NUMBER} --repo nv-morpheus/${REPO_NAME} --merge
+      - name: Checkout main branch
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: ${REPO_NAME}
+          ref: main
+          fetch-tags: true # Fetch all tags
+      - name: Create release commit and tag
+        run: |
+          git commit --allow-empty -m "REL v${CURRENT_FULL_VERSION} release"
+          git tag -a -m "$(date +"%B %Y") Release" v${CURRENT_FULL_VERSION}
+          git push origin main v${CURRENT_FULL_VERSION}
