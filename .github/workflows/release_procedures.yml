@@ -19,15 +19,15 @@ on:
   workflow_dispatch:
     inputs:
       current_version_array:
-        description: 'Current full version of the project expressed as a JSON array (e.g. "[23, 11, 00]")'
+        description: 'Current full version of the project expressed as a JSON array (e.g. `["23", "11", "00"]`)'
         required: true
         type: string
-        default: "[23, 11, 00]"
+        default: '["23", "11", "00"]'
       next_version_array:
-        description: 'Next full version of the project as a JSON array (e.g. "[24, 03, 00]")'
+        description: 'Next full version of the project as a JSON array (e.g. `["24", "03", "00"]`)'
         required: true
         type: string
-        default: "[24, 03, 00]"
+        default: '["24", "03", "00"]'
       create_codefreeze_pr:
         description: 'Create/Update the codefreeze PR'
         required: true
@@ -76,6 +76,7 @@ jobs:
           ref: branch-${{ env.CURRENT_VERSION }}
       - name: Create PR
         run: |
+          cd ${{ env.REPO_NAME }}
           cat ci/release/pr_code_freeze_template.md | envsubst | \
             gh pr create --base main --head branch-${CURRENT_VERSION} \
               --title "[RELEASE] ${REPO_NAME} v${CURRENT_VERSION}" \
