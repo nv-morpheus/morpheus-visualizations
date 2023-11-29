@@ -74,8 +74,6 @@ jobs:
           lfs: false
           path: ${{ env.REPO_NAME }}
           ref: branch-${{ env.CURRENT_VERSION }}
-          sparse-checkout: |
-            ci/release
       - name: Create PR
         run: |
           cat ci/release/pr_code_freeze_template.md | envsubst | \
@@ -112,6 +110,7 @@ jobs:
   update_next_release_versions:
     if: ${{ inputs.update_next_release_versions }}
     name: Update Next Release Versions
+    needs: [create_next_release_branch]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
