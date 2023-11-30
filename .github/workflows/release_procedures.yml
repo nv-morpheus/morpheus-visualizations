@@ -72,12 +72,30 @@ jobs:
     name: Create Codefreeze PR
     runs-on: ubuntu-latest
     steps:
+      - name: Generate Token
+        uses: actions/create-github-app-token@v1
+        id: generate-token
+        with:
+          # required
+          app-id: ${{ secrets.ACTIONS_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_APP_KEY }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          lfs: false
           path: ${{ env.REPO_NAME }}
           ref: branch-${{ env.CURRENT_VERSION }}
+          fetch-depth: 0 # Fetch all history for all tags and branches
+          token: ${{ steps.generate-token.outputs.token }}
+          persist-credentials: false
+      - name: Auth info
+        run: |
+          cd ${REPO_NAME}
+          echo "Printing default auth"
+          gh auth status
+          echo "Printing auth for different token"
+          GITHUB_TOKEN=${{ steps.generate-token.outputs.token }} gh auth status
+          echo "GITHUB_TOKEN=${{ steps.generate-token.outputs.token }}" << $GITHUB_ENV
+          gh auth refresh
       - name: Create PR
         run: |
           cd ${{ env.REPO_NAME }}
