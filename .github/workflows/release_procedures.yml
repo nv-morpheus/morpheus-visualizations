@@ -59,7 +59,7 @@ on:
         default: false
 
 env:
-  # GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_PAT }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   REPO_NAME: 'morpheus-visualizations'
   CURRENT_VERSION: ${{ format('{0}.{1}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1]) }}
   CURRENT_FULL_VERSION: ${{ format('{0}.{1}.{2}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1], fromJson(inputs.current_version_array)[2]) }}
@@ -91,6 +91,13 @@ jobs:
     name: Create Next Release Branch
     runs-on: ubuntu-latest
     steps:
+      - name: Generate Token
+        uses: actions/create-github-app-token@v1
+        id: generate-token
+        with:
+          # required
+          app-id: ${{ secrets.ACTIONS_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_APP_KEY }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -98,13 +105,15 @@ jobs:
           path: ${{ env.REPO_NAME }}
           ref: branch-${{ env.CURRENT_VERSION }}
           fetch-depth: 0 # Fetch all history for all tags and branches
+          token: ${{ steps.generate-token.outputs.token }}
+          persist-credentials: false
       - name: Auth info
         run: |
           cd ${REPO_NAME}
           echo "Printing default auth"
-          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} gh auth status
+          gh auth status
           echo "Printing auth for different token"
-          GITHUB_TOKEN=${{ secrets.PROJECT_MANAGEMENT_PAT }} gh auth status
+          GITHUB_TOKEN=${{ steps.generate-token.outputs.token }} gh auth status
       - name: Setup Git user
         run: |
           cd ${REPO_NAME}
