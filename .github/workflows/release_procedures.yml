@@ -128,7 +128,13 @@ jobs:
           git checkout -b branch-${NEXT_VERSION}
           git commit --allow-empty -m "Creating branch for v${NEXT_VERSION}"
           git tag -a -m "Alpha release of v${NEXT_VERSION}" v${NEXT_FULL_VERSION}a
-          git push origin branch-${NEXT_VERSION} v${NEXT_FULL_VERSION}a
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ steps.generate-token.outputs.token }}
+          directory: ${{ env.REPO_NAME }}
+          branch: branch-${NEXT_VERSION}
+          tags: true
       - name: Set default branch
         run: |
           gh repo edit --default-branch branch-${NEXT_VERSION}
