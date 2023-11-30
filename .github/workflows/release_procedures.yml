@@ -101,7 +101,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          lfs: true
           path: ${{ env.REPO_NAME }}
           ref: branch-${{ env.CURRENT_VERSION }}
           fetch-depth: 0 # Fetch all history for all tags and branches
