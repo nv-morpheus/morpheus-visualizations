@@ -117,8 +117,8 @@ jobs:
       - name: Setup Git user
         run: |
           cd ${REPO_NAME}
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config user.name "morpheus-bot-test[bot]"
+          git config user.email "152534332+morpheus-bot-test[bot]@users.noreply.github.com"
       - name: Create branch
         run: |
           cd ${REPO_NAME}
