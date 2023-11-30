@@ -59,7 +59,7 @@ on:
         default: false
 
 env:
-  GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_PAT }}
+  # GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_PAT }}
   REPO_NAME: 'morpheus-visualizations'
   CURRENT_VERSION: ${{ format('{0}.{1}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1]) }}
   CURRENT_FULL_VERSION: ${{ format('{0}.{1}.{2}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1], fromJson(inputs.current_version_array)[2]) }}
@@ -104,7 +104,7 @@ jobs:
           echo "Printing default auth"
           gh auth status
           echo "Printing auth for different token"
-          GITHUB_TOKEN=${{ secrets.ACTIONS_PAT }} gh auth status
+          GITHUB_TOKEN=${{ secrets.PROJECT_MANAGEMENT_PAT }} gh auth status
       - name: Setup Git user
         run: |
           cd ${REPO_NAME}
