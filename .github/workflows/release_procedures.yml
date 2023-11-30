@@ -98,6 +98,13 @@ jobs:
           path: ${{ env.REPO_NAME }}
           ref: branch-${{ env.CURRENT_VERSION }}
           fetch-depth: 0 # Fetch all history for all tags and branches
+      - name: Auth info
+        run: |
+          cd ${REPO_NAME}
+          echo "Printing default auth"
+          gh auth status
+          echo "Printing auth for different token"
+          GITHUB_TOKEN=${{ secrets.ACTIONS_PAT }} gh auth status
       - name: Setup Git user
         run: |
           cd ${REPO_NAME}
