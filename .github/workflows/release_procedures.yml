@@ -96,11 +96,11 @@ jobs:
           fetch-depth: 0 # Fetch all history for all tags and branches
       - name: Setup Git user
         run: |
+          cd ${REPO_NAME}
           git config user.name github-actions
           git config user.email github-actions@github.com
       - name: Create branch
         run: |
-          cd ${REPO_NAME}
           git checkout -b branch-${NEXT_VERSION}
           git commit --allow-empty -m "Creating branch for v${NEXT_VERSION}"
           git tag -a -m "Alpha release of v${NEXT_VERSION}" v${NEXT_FULL_VERSION}a
