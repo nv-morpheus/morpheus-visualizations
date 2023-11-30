@@ -102,7 +102,7 @@ jobs:
         run: |
           cd ${REPO_NAME}
           echo "Printing default auth"
-          gh auth status
+          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} gh auth status
           echo "Printing auth for different token"
           GITHUB_TOKEN=${{ secrets.PROJECT_MANAGEMENT_PAT }} gh auth status
       - name: Setup Git user
