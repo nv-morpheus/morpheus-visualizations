@@ -96,7 +96,7 @@ jobs:
 
           cat ci/release/pr_code_freeze_template.md | envsubst | \
             gh pr create --base main --head branch-${CURRENT_VERSION} \
-              --title "[RELEASE] ${REPO_NAME} v${CURRENT_VERSION}" \
+              --title "[RELEASE] ${REPO_NAME} v${CURRENT_FULL_VERSION}" \
               --body-file - \
               --label "! - Release"
   create_next_release_branch:
@@ -132,7 +132,7 @@ jobs:
           gh repo edit ${{ github.repository }} --default-branch branch-${NEXT_VERSION}
 
   update_next_release_versions:
-    if: ${{ inputs.update_next_release_versions }}
+    if: ${{ always() && inputs.update_next_release_versions }}
     name: Update Next Release Versions
     needs: [create_next_release_branch]
     runs-on: ubuntu-latest
