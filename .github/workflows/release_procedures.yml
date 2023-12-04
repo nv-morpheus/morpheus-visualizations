@@ -123,7 +123,6 @@ jobs:
           ref: branch-${{ env.CURRENT_VERSION }}
           fetch-depth: 0 # Fetch all history for all tags and branches
           token: ${{ steps.generate-token.outputs.token }}
-          persist-credentials: false
       - name: Auth info
         run: |
           cd ${REPO_NAME}
@@ -138,8 +137,8 @@ jobs:
           cd ${REPO_NAME}
           git config user.name "morpheus-bot-test[bot]"
           git config user.email "152534332+morpheus-bot-test[bot]@users.noreply.github.com"
-          git config url.https://${{ steps.generate-token.outputs.token }}@github.com/.insteadOf https://github.com/
-          gh auth setup-git
+          # git config url.https://${{ steps.generate-token.outputs.token }}@github.com/.insteadOf https://github.com/
+          # gh auth setup-git
       - name: Create branch
         run: |
           cd ${REPO_NAME}
