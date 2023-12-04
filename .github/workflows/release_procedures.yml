@@ -60,7 +60,7 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  REPO_NAME: ${{ github.repository_id }}
+  REPO_NAME: ${{ github.event.repository.name }}
   CURRENT_VERSION: ${{ format('{0}.{1}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1]) }}
   CURRENT_FULL_VERSION: ${{ format('{0}.{1}.{2}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1], fromJson(inputs.current_version_array)[2]) }}
   NEXT_VERSION: ${{ format('{0}.{1}', fromJson(inputs.next_version_array)[0], fromJson(inputs.next_version_array)[1]) }}
@@ -83,16 +83,12 @@ jobs:
         with:
           path: ${{ env.REPO_NAME }}
           ref: branch-${{ env.CURRENT_VERSION }}
-          fetch-depth: 0 # Fetch all history for all tags and branches
           token: ${{ steps.configure-bot.outputs.token }}
-          persist-credentials: false
       - name: Create PR
         run: |
           cd ${{ env.REPO_NAME }}
 
-          # Export version variables as environment variables so it works with envsubst
-          export CURRENT_VERSION=${{ env.CURRENT_VERSION }}
-          export NEXT_VERSION=${{ env.NEXT_VERSION }}
+          gh auth status
 
           cat ci/release/pr_code_freeze_template.md | envsubst | \
             gh pr create --base main --head branch-${CURRENT_VERSION} \
