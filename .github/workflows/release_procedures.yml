@@ -130,7 +130,7 @@ jobs:
           gh auth status
           echo "Printing auth for different token"
           GITHUB_TOKEN=${{ steps.generate-token.outputs.token }} gh auth status
-          echo "GITHUB_TOKEN=${{ steps.generate-token.outputs.token }}" << $GITHUB_ENV
+          echo "GITHUB_TOKEN=${{ steps.generate-token.outputs.token }}" >> "$GITHUB_ENV"
           gh auth refresh
       - name: Setup Git user
         run: |
@@ -139,6 +139,8 @@ jobs:
           git config user.email "152534332+morpheus-bot-test[bot]@users.noreply.github.com"
           # git config url.https://${{ steps.generate-token.outputs.token }}@github.com/.insteadOf https://github.com/
           # gh auth setup-git
+          echo "Git config:"
+          git config -l --show-origin
       - name: Create branch
         run: |
           cd ${REPO_NAME}
