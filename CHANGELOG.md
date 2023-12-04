@@ -1,3 +1,10 @@
+# morpheus-visualizations 23.11.00 (30 Nov 2023)
+
+## 🛠️ Improvements
+
+- Use `copy-pr-bot` ([#25](https://github.com/nv-morpheus/morpheus-visualizations/pull/25)) [@ajschmidt8](https://github.com/ajschmidt8)
+- Update Versions for v23.11.00 ([#21](https://github.com/nv-morpheus/morpheus-visualizations/pull/21)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+
 # morpheus-visualizations 23.07.00 (18 Jul 2023)
 
 ## 🐛 Bug Fixes
