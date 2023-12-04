@@ -146,6 +146,7 @@ jobs:
           path: ${{ env.REPO_NAME }}
           ref: branch-${{ env.NEXT_VERSION }}
           token: ${{ steps.configure-bot.outputs.token }}
+          submodules: recursive
       - name: Run update script
         run: |
           cd ${REPO_NAME}
@@ -181,10 +182,12 @@ jobs:
           cd ${REPO_NAME}
 
           # Get the release notes from the current nightly release
-          RELEASE_NOTES=$(gh release view v${CURRENT_FULL_VERSION}a --repo ${{ github.repository }} --json body | jq -r '.body')
+          RELEASE_NOTES=$(gh release view v${CURRENT_FULL_VERSION}a --repo ${{ github.repository }} --json body | jq -r '.body' | tail -n +6)
+
+          echo "RELEASE_NOTES=${RELEASE_NOTES}"
 
           # Update the CHANGELOG.md file
-          echo "# ${REPO_NAME} ${CURRENT_FULL_VERSION} ($(date +"%d %b %Y"))\n\n${RELEASE_NOTES}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+          echo -e "# ${REPO_NAME} ${CURRENT_FULL_VERSION} ($(date +"%d %b %Y"))\n\n${RELEASE_NOTES}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
 
           # Update the links
           export PR_URL_PREFIX="https://github.com/${{ github.repository }}/pull/"
@@ -192,10 +195,11 @@ jobs:
           sed -i "s|(#\([[:digit:]]*\))|([#\1](${PR_URL_PREFIX}\1))|g" CHANGELOG.md
           sed -i "s|@\([a-zA-Z0-9\-]\{1,39\}\)$|[@\1](${GH_URL}/\1)|g" CHANGELOG.md
 
-          # Commit the changes
-          git add CHANGELOG.md
-          git commit -m "Updating CHANGELOG"
-          git push origin branch-${CURRENT_VERSION}
+          # # Commit the changes
+          # git add CHANGELOG.md
+          # git commit -m "Updating CHANGELOG"
+          # git push origin branch-${CURRENT_VERSION}
+          cat CHANGELOG.md
 
   merge_release_branch:
     if: ${{ inputs.merge_release_branch }}
@@ -219,31 +223,31 @@ jobs:
 
           # Save the PR number to an output variable
           echo "pr_number=$(echo "${PR_LIST}" | jq -r '.[0].number')"" >> $GITHUB_OUTPUT
-      - name: Merge the release PR
-        run: |
-          PR_NUMBER=${{ steps.find_matching_prs.outputs.pr_number }}
-          gh pr merge ${PR_NUMBER} --repo ${{ github.repository }} --merge
-      - name: Checkout main branch
-        uses: actions/checkout@v3
-        with:
-          lfs: false
-          path: ${{ env.REPO_NAME }}
-          ref: main
-          fetch-tags: true # Fetch all tags
-          token: ${{ steps.configure-bot.outputs.token }}
-      - name: Create release commit and tag
-        run: |
-          cd ${REPO_NAME}
-          git commit --allow-empty -m "REL v${CURRENT_FULL_VERSION} release"
-          git tag -a -m "$(date +"%B %Y") Release" v${CURRENT_FULL_VERSION}
-          git push origin main v${CURRENT_FULL_VERSION}
-      - name: Create Github release
-        run: |
-          # Get the release body from the current nightly release
-          RELEASE_BODY=$(gh release view v${CURRENT_FULL_VERSION}a --repo ${{ github.repository }} --json body | jq -r '.body')
+      # - name: Merge the release PR
+      #   run: |
+      #     PR_NUMBER=${{ steps.find_matching_prs.outputs.pr_number }}
+      #     gh pr merge ${PR_NUMBER} --repo ${{ github.repository }} --merge
+      # - name: Checkout main branch
+      #   uses: actions/checkout@v3
+      #   with:
+      #     lfs: false
+      #     path: ${{ env.REPO_NAME }}
+      #     ref: main
+      #     fetch-tags: true # Fetch all tags
+      #     token: ${{ steps.configure-bot.outputs.token }}
+      # - name: Create release commit and tag
+      #   run: |
+      #     cd ${REPO_NAME}
+      #     git commit --allow-empty -m "REL v${CURRENT_FULL_VERSION} release"
+      #     git tag -a -m "$(date +"%B %Y") Release" v${CURRENT_FULL_VERSION}
+      #     git push origin main v${CURRENT_FULL_VERSION}
+      # - name: Create Github release
+      #   run: |
+      #     # Get the release body from the current nightly release
+      #     RELEASE_BODY=$(gh release view v${CURRENT_FULL_VERSION}a --repo ${{ github.repository }} --json body | jq -r '.body' | tail -n +6)
 
-          # Build the release for Github
-          gh release create v${CURRENT_FULL_VERSION} --repo ${{ github.repository }} \
-            --title "v${CURRENT_FULL_VERSION}" \
-            --notes "${RELEASE_BODY}" \
-            --verify-tag
+      #     # Build the release for Github
+      #     gh release create v${CURRENT_FULL_VERSION} --repo ${{ github.repository }} \
+      #       --title "v${CURRENT_FULL_VERSION}" \
+      #       --notes "${RELEASE_BODY}" \
+      #       --verify-tag
