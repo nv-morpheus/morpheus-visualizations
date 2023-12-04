@@ -89,6 +89,11 @@ jobs:
       - name: Create PR
         run: |
           cd ${{ env.REPO_NAME }}
+
+          # Export version variables as environment variables so it works with envsubst
+          export CURRENT_VERSION=${{ env.CURRENT_VERSION }}
+          export NEXT_VERSION=${{ env.NEXT_VERSION }}
+
           cat ci/release/pr_code_freeze_template.md | envsubst | \
             gh pr create --base main --head branch-${CURRENT_VERSION} \
               --title "[RELEASE] ${REPO_NAME} v${CURRENT_VERSION}" \
