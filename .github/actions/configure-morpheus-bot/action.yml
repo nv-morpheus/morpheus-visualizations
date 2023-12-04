@@ -40,6 +40,7 @@ runs:
         app-id: ${{ inputs.bot-app-id }}
         private-key: ${{ inputs.bot-private-key }}
     - name: Configure Git
+      shell: bash
       run: |
         git config -g user.name "morpheus-bot-test[bot]"
         git config -g user.email "152534332+morpheus-bot-test[bot]@users.noreply.github.com"
