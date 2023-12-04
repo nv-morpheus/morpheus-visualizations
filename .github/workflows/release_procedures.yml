@@ -145,10 +145,11 @@ jobs:
           lfs: false
           path: ${REPO_NAME}
           ref: branch-${NEXT_VERSION}
-          fetch-depth: 0 # Fetch all history for all tags and branches
           token: ${{ steps.configure-bot.outputs.token }}
       - name: Run update script
         run: |
+          cd ${REPO_NAME}
+
           # Run the update-versions script and commit all changes
           ./ci/release/update-version.sh ${CURRENT_FULL_VERSION} ${NEXT_FULL_VERSION}
           git add .
