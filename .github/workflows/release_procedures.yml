@@ -60,7 +60,7 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  REPO_NAME: 'morpheus-visualizations'
+  REPO_NAME: ${{ github.repository_id }}
   CURRENT_VERSION: ${{ format('{0}.{1}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1]) }}
   CURRENT_FULL_VERSION: ${{ format('{0}.{1}.{2}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1], fromJson(inputs.current_version_array)[2]) }}
   NEXT_VERSION: ${{ format('{0}.{1}', fromJson(inputs.next_version_array)[0], fromJson(inputs.next_version_array)[1]) }}
@@ -72,30 +72,20 @@ jobs:
     name: Create Codefreeze PR
     runs-on: ubuntu-latest
     steps:
-      - name: Generate Token
-        uses: actions/create-github-app-token@v1
-        id: generate-token
+      - name: Configure Bot
+        id: configure-bot
+        uses: nv-morpheus/morpheus-visualizations/.github/actions/configure-morpheus-bot@mdd_test-release-procedures
         with:
-          # required
-          app-id: ${{ secrets.ACTIONS_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_APP_KEY }}
+          bot-app-id: ${{ secrets.ACTIONS_APP_ID }}
+          bot-private-key: ${{ secrets.ACTIONS_APP_KEY }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
           path: ${{ env.REPO_NAME }}
           ref: branch-${{ env.CURRENT_VERSION }}
           fetch-depth: 0 # Fetch all history for all tags and branches
-          token: ${{ steps.generate-token.outputs.token }}
+          token: ${{ steps.configure-bot.outputs.token }}
           persist-credentials: false
-      - name: Auth info
-        run: |
-          cd ${REPO_NAME}
-          echo "Printing default auth"
-          gh auth status
-          echo "Printing auth for different token"
-          GITHUB_TOKEN=${{ steps.generate-token.outputs.token }} gh auth status
-          echo "GITHUB_TOKEN=${{ steps.generate-token.outputs.token }}" << $GITHUB_ENV
-          gh auth refresh
       - name: Create PR
         run: |
           cd ${{ env.REPO_NAME }}
@@ -122,11 +112,6 @@ jobs:
           ref: branch-${{ env.CURRENT_VERSION }}
           fetch-depth: 0 # Fetch all history for all tags and branches
           token: ${{ steps.configure-bot.outputs.token }}
-      - name: Auth info
-        run: |
-          cd ${REPO_NAME}
-          echo "Printing default auth"
-          gh auth status
       - name: Create branch
         run: |
           cd ${REPO_NAME}
@@ -139,7 +124,7 @@ jobs:
           git push origin branch-${NEXT_VERSION} v${NEXT_FULL_VERSION}a
       - name: Set default branch
         run: |
-          gh repo edit --default-branch branch-${NEXT_VERSION}
+          gh repo edit ${{ github.repository }} --default-branch branch-${NEXT_VERSION}
 
   update_next_release_versions:
     if: ${{ inputs.update_next_release_versions }}
@@ -163,54 +148,68 @@ jobs:
           token: ${{ steps.configure-bot.outputs.token }}
       - name: Run update script
         run: |
-          # Create a new branch for the update-versions changes
-          git checkout -b update-versions-${NEXT_FULL_VERSION}
-
           # Run the update-versions script and commit all changes
           ./ci/release/update-version.sh ${CURRENT_FULL_VERSION} ${NEXT_FULL_VERSION}
           git add .
           git commit -m "Updating versions for v${NEXT_FULL_VERSION}"
 
           # Push the changes
-          git push origin update-versions-${NEXT_FULL_VERSION}
-
-          # Create a PR using the gh CLI
-          gh pr create --title "Update Versions for v${NEXT_FULL_VERSION}" \
-            --body "This PR contains the changes from running the \`ci/release/update-version.sh\` script for a new release" \
-            --repo nv-morpheus/${REPO_NAME} \
-            --project "Morpheus Boards" \
-            --base branch-${NEXT_VERSION} \
-            --label "non-breaking" \
-            --label "improvement"
+          git push origin branch-${NEXT_VERSION}
 
   update_changelog:
     if: ${{ inputs.update_changelog }}
     name: Update Changelog
     runs-on: ubuntu-latest
     steps:
+      - name: Configure Bot
+        id: configure-bot
+        uses: nv-morpheus/morpheus-visualizations/.github/actions/configure-morpheus-bot@mdd_test-release-procedures
+        with:
+          bot-app-id: ${{ secrets.ACTIONS_APP_ID }}
+          bot-private-key: ${{ secrets.ACTIONS_APP_KEY }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
           lfs: false
           path: ${REPO_NAME}
           ref: branch-${CURRENT_VERSION}
-      - name: Setup Git user
-        run: |
-          git config user.name github-actions
-          git config user.email
+          token: ${{ steps.configure-bot.outputs.token }}
       - name: Update the CHANGELOG.md file
         run: |
-          echo "Not implemented yet"
+          cd ${REPO_NAME}
+
+          # Get the release notes from the current nightly release
+          RELEASE_NOTES=$(gh release view v${CURRENT_FULL_VERSION}a --repo ${{ github.repository }} --json body | jq -r '.body')
+
+          # Update the CHANGELOG.md file
+          echo "# ${REPO_NAME} ${CURRENT_FULL_VERSION} ($(date +"%d %b %Y"))\n\n${RELEASE_NOTES}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+
+          # Update the links
+          export PR_URL_PREFIX="https://github.com/${{ github.repository }}/pull/"
+          export GH_URL="https://github.com"
+          sed -i "s|(#\([[:digit:]]*\))|([#\1](${PR_URL_PREFIX}\1))|g" CHANGELOG.md
+          sed -i "s|@\([a-zA-Z0-9\-]\{1,39\}\)$|[@\1](${GH_URL}/\1)|g" CHANGELOG.md
+
+          # Commit the changes
+          git add CHANGELOG.md
+          git commit -m "Updating CHANGELOG"
+          git push origin branch-${CURRENT_VERSION}
 
   merge_release_branch:
     if: ${{ inputs.merge_release_branch }}
     name: Merge Release Branch
     runs-on: ubuntu-latest
     steps:
+      - name: Configure Bot
+        id: configure-bot
+        uses: nv-morpheus/morpheus-visualizations/.github/actions/configure-morpheus-bot@mdd_test-release-procedures
+        with:
+          bot-app-id: ${{ secrets.ACTIONS_APP_ID }}
+          bot-private-key: ${{ secrets.ACTIONS_APP_KEY }}
       - name: Find Matching Release PRs
         id: find_matching_prs
         run: |
-          PR_LIST=$(gh pr list --repo nv-morpheus/${REPO_NAME} --base main --head branch-${CURRENT_VERSION} --label "!Release" --state open --json number')
+          PR_LIST=$(gh pr list --repo ${{ github.repository }} --base main --head branch-${CURRENT_VERSION} --label "!Release" --state open --json number')
           if [[ $(echo "${PR_LIST}" | jq length) != 1 ]]; then
             echo "::error Found multiple PRs for the current release. Please close all but one PR and try again. Matched PRs: ${PR_LIST}"
             exit 1
@@ -221,7 +220,7 @@ jobs:
       - name: Merge the release PR
         run: |
           PR_NUMBER=${{ steps.find_matching_prs.outputs.pr_number }}
-          gh pr merge ${PR_NUMBER} --repo nv-morpheus/${REPO_NAME} --merge
+          gh pr merge ${PR_NUMBER} --repo ${{ github.repository }} --merge
       - name: Checkout main branch
         uses: actions/checkout@v3
         with:
@@ -229,8 +228,20 @@ jobs:
           path: ${REPO_NAME}
           ref: main
           fetch-tags: true # Fetch all tags
+          token: ${{ steps.configure-bot.outputs.token }}
       - name: Create release commit and tag
         run: |
+          cd ${REPO_NAME}
           git commit --allow-empty -m "REL v${CURRENT_FULL_VERSION} release"
           git tag -a -m "$(date +"%B %Y") Release" v${CURRENT_FULL_VERSION}
           git push origin main v${CURRENT_FULL_VERSION}
+      - name: Create Github release
+        run: |
+          # Get the release body from the current nightly release
+          RELEASE_BODY=$(gh release view v${CURRENT_FULL_VERSION}a --repo ${{ github.repository }} --json body | jq -r '.body')
+
+          # Build the release for Github
+          gh release create v${CURRENT_FULL_VERSION} --repo ${{ github.repository }} \
+            --title "v${CURRENT_FULL_VERSION}" \
+            --notes "${RELEASE_BODY}" \
+            --verify-tag
