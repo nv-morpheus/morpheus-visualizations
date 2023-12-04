@@ -43,12 +43,12 @@ on:
         type: boolean
         default: false
       update_next_release_versions:
-        description: 'Runs the update-version script and creates a PR with the changes'
+        description: 'Runs the update-version and commits the changes to the next release branch'
         required: true
         type: boolean
         default: false
       update_changelog:
-        description: 'Updates the CHANGELOG.md file for the current release and commits the changes'
+        description: 'Updates the CHANGELOG.md file for the current release and commits the changes to the current release branch'
         required: true
         type: boolean
         default: false
@@ -87,8 +87,6 @@ jobs:
       - name: Create PR
         run: |
           cd ${{ env.REPO_NAME }}
-
-          gh auth status
 
           cat ci/release/pr_code_freeze_template.md | envsubst | \
             gh pr create --base main --head branch-${CURRENT_VERSION} \
@@ -215,7 +213,8 @@ jobs:
       - name: Find Matching Release PRs
         id: find_matching_prs
         run: |
-          PR_LIST=$(gh pr list --repo ${{ github.repository }} --base main --head branch-${CURRENT_VERSION} --label "!Release" --state open --json number')
+          set -x
+          PR_LIST=$(gh pr list --repo ${{ github.repository }} --base main --head branch-${CURRENT_VERSION} --label "!Release" --state open --json number)
           if [[ $(echo "${PR_LIST}" | jq length) != 1 ]]; then
             echo "::error Found multiple PRs for the current release. Please close all but one PR and try again. Matched PRs: ${PR_LIST}"
             exit 1
