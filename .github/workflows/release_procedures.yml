@@ -131,7 +131,7 @@ jobs:
           echo "Printing auth for different token"
           GITHUB_TOKEN=${{ steps.generate-token.outputs.token }} gh auth status
           echo "GITHUB_TOKEN=${{ steps.generate-token.outputs.token }}" >> "$GITHUB_ENV"
-          gh auth refresh
+          # gh auth refresh
       - name: Setup Git user
         run: |
           cd ${REPO_NAME}
