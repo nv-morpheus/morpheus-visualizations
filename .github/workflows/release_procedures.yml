@@ -109,38 +109,24 @@ jobs:
     name: Create Next Release Branch
     runs-on: ubuntu-latest
     steps:
-      - name: Generate Token
-        uses: actions/create-github-app-token@v1
-        id: generate-token
+      - name: Configure Bot
+        id: configure-bot
+        uses: ./.github/actions/configure-morpheus-bot
         with:
-          # required
-          app-id: ${{ secrets.ACTIONS_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_APP_KEY }}
+          bot-app-id: ${{ secrets.ACTIONS_APP_ID }}
+          bot-private-key: ${{ secrets.ACTIONS_APP_KEY }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
           path: ${{ env.REPO_NAME }}
           ref: branch-${{ env.CURRENT_VERSION }}
           fetch-depth: 0 # Fetch all history for all tags and branches
-          token: ${{ steps.generate-token.outputs.token }}
+          token: ${{ steps.configure-bot.outputs.token }}
       - name: Auth info
         run: |
           cd ${REPO_NAME}
           echo "Printing default auth"
           gh auth status
-          echo "Printing auth for different token"
-          GITHUB_TOKEN=${{ steps.generate-token.outputs.token }} gh auth status
-          echo "GITHUB_TOKEN=${{ steps.generate-token.outputs.token }}" >> "$GITHUB_ENV"
-          # gh auth refresh
-      - name: Setup Git user
-        run: |
-          cd ${REPO_NAME}
-          git config user.name "morpheus-bot-test[bot]"
-          git config user.email "152534332+morpheus-bot-test[bot]@users.noreply.github.com"
-          # git config url.https://${{ steps.generate-token.outputs.token }}@github.com/.insteadOf https://github.com/
-          # gh auth setup-git
-          echo "Git config:"
-          git config -l --show-origin
       - name: Create branch
         run: |
           cd ${REPO_NAME}
