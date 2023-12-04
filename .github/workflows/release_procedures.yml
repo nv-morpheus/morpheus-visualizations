@@ -111,7 +111,7 @@ jobs:
     steps:
       - name: Configure Bot
         id: configure-bot
-        uses: ./.github/actions/configure-morpheus-bot
+        uses: nv-morpheus/morpheus-visualizations/.github/actions/configure-morpheus-bot@mdd_test-release-procedures
         with:
           bot-app-id: ${{ secrets.ACTIONS_APP_ID }}
           bot-private-key: ${{ secrets.ACTIONS_APP_KEY }}
@@ -147,6 +147,12 @@ jobs:
     needs: [create_next_release_branch]
     runs-on: ubuntu-latest
     steps:
+      - name: Configure Bot
+        id: configure-bot
+        uses: nv-morpheus/morpheus-visualizations/.github/actions/configure-morpheus-bot@mdd_test-release-procedures
+        with:
+          bot-app-id: ${{ secrets.ACTIONS_APP_ID }}
+          bot-private-key: ${{ secrets.ACTIONS_APP_KEY }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -154,10 +160,7 @@ jobs:
           path: ${REPO_NAME}
           ref: branch-${NEXT_VERSION}
           fetch-depth: 0 # Fetch all history for all tags and branches
-      - name: Setup Git user
-        run: |
-          git config user.name github-actions
-          git config user.email
+          token: ${{ steps.configure-bot.outputs.token }}
       - name: Run update script
         run: |
           # Create a new branch for the update-versions changes
