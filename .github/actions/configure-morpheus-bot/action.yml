@@ -37,8 +37,8 @@ runs:
       uses: actions/create-github-app-token@v1
       id: generate-token
       with:
-        app-id: ${{ secrets.ACTIONS_APP_ID }}
-        private-key: ${{ secrets.ACTIONS_APP_KEY }}
+        app-id: ${{ inputs.bot-app-id }}
+        private-key: ${{ inputs.bot-private-key }}
     - name: Configure Git
       run: |
         git config -g user.name "morpheus-bot-test[bot]"
