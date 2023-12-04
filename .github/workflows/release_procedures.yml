@@ -214,7 +214,7 @@ jobs:
         id: find_matching_prs
         run: |
           set -x
-          PR_LIST=$(gh pr list --repo ${{ github.repository }} --base main --head branch-${CURRENT_VERSION} --label "!Release" --state open --json number)
+          PR_LIST=$(gh pr list --repo ${{ github.repository }} --base main --head branch-${CURRENT_VERSION} --label "! - Release" --state open --json number)
           if [[ $(echo "${PR_LIST}" | jq length) != 1 ]]; then
             echo "::error Found multiple PRs for the current release. Please close all but one PR and try again. Matched PRs: ${PR_LIST}"
             exit 1
