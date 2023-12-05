@@ -79,17 +79,19 @@ jobs:
           bot-app-id: ${{ secrets.ACTIONS_APP_ID }}
           bot-private-key: ${{ secrets.ACTIONS_APP_KEY }}
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          path: ${{ env.REPO_NAME }}
+          path: utilities
           ref: branch-${{ env.CURRENT_VERSION }}
           token: ${{ steps.configure-bot.outputs.token }}
+          sparse-checkout: |
+            .github/CODE_FREEZE_PR_TEMPLATE.md
+          sparse-checkout-cone-mode: false
       - name: Create PR
         run: |
-          cd ${{ env.REPO_NAME }}
-
-          cat ci/release/pr_code_freeze_template.md | envsubst | \
-            gh pr create --base main --head branch-${CURRENT_VERSION} \
+          cat utilities/.github/CODE_FREEZE_PR_TEMPLATE.md | envsubst | \
+            gh pr create --repo ${{ github.repository }} \
+              --base main --head branch-${CURRENT_VERSION} \
               --title "[RELEASE] ${REPO_NAME} v${CURRENT_FULL_VERSION}" \
               --body-file - \
               --label "! - Release"
@@ -105,7 +107,7 @@ jobs:
           bot-app-id: ${{ secrets.ACTIONS_APP_ID }}
           bot-private-key: ${{ secrets.ACTIONS_APP_KEY }}
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: ${{ env.REPO_NAME }}
           ref: branch-${{ env.CURRENT_VERSION }}
@@ -138,7 +140,7 @@ jobs:
           bot-app-id: ${{ secrets.ACTIONS_APP_ID }}
           bot-private-key: ${{ secrets.ACTIONS_APP_KEY }}
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           lfs: false
           path: ${{ env.REPO_NAME }}
@@ -169,7 +171,7 @@ jobs:
           bot-app-id: ${{ secrets.ACTIONS_APP_ID }}
           bot-private-key: ${{ secrets.ACTIONS_APP_KEY }}
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           lfs: false
           path: ${{ env.REPO_NAME }}
@@ -222,12 +224,12 @@ jobs:
 
           # Save the PR number to an output variable
           echo "pr_number=$(echo ${PR_LIST} | jq -r '.[0].number')" >> $GITHUB_OUTPUT
-      # - name: Merge the release PR
-      #   run: |
-      #     PR_NUMBER=${{ steps.find_matching_prs.outputs.pr_number }}
-      #     gh pr merge ${PR_NUMBER} --repo ${{ github.repository }} --merge
+      - name: Merge the release PR
+        run: |
+          PR_NUMBER=${{ steps.find_matching_prs.outputs.pr_number }}
+          gh pr merge ${PR_NUMBER} --repo ${{ github.repository }} --merge
       - name: Checkout main branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           lfs: false
           path: ${{ env.REPO_NAME }}
@@ -239,8 +241,7 @@ jobs:
           cd ${REPO_NAME}
           git commit --allow-empty -m "REL v${CURRENT_FULL_VERSION} release"
           git tag -a -m "$(date +"%B %Y") Release" v${CURRENT_FULL_VERSION}
-          # git push origin main v${CURRENT_FULL_VERSION}
-          git push origin v${CURRENT_FULL_VERSION}
+          git push origin main v${CURRENT_FULL_VERSION}
       - name: Create Github release
         run: |
           # Get the release body from the current nightly release
@@ -250,5 +251,4 @@ jobs:
           gh release create v${CURRENT_FULL_VERSION} --repo ${{ github.repository }} \
             --title "v${CURRENT_FULL_VERSION}" \
             --notes "${RELEASE_BODY}" \
-            --verify-tag \
-            --draft
+            --verify-tag
