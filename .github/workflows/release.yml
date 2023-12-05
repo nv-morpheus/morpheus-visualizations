@@ -52,11 +52,11 @@ on:
         required: true
         type: boolean
         default: false
-      merge_release_branch:
-        description: 'Merges the code freeze release branch, creates the release tag, and creates a new Github release'
-        required: true
-        type: boolean
-        default: false
+      # merge_release_branch:
+      #   description: 'Merges the code freeze release branch, creates the release tag, and creates a new Github release'
+      #   required: true
+      #   type: boolean
+      #   default: false
 
 # env:
 #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -76,7 +76,7 @@ jobs:
       create_next_release_branch: ${{ inputs.create_next_release_branch }}
       update_next_release_versions: ${{ inputs.update_next_release_versions }}
       update_changelog: ${{ inputs.update_changelog }}
-      merge_release_branch: ${{ inputs.merge_release_branch }}
+      # merge_release_branch: ${{ inputs.merge_release_branch }}
     secrets:
       ACTIONS_APP_ID: ${{ secrets.ACTIONS_APP_ID }}
       ACTIONS_APP_KEY: ${{ secrets.ACTIONS_APP_KEY }}
