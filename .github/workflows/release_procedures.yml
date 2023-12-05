@@ -221,7 +221,7 @@ jobs:
           fi
 
           # Save the PR number to an output variable
-          echo "pr_number=$(echo "${PR_LIST}" | jq -r '.[0].number')"" >> $GITHUB_OUTPUT
+          echo "pr_number=$(echo ${PR_LIST} | jq -r '.[0].number')" >> $GITHUB_OUTPUT
       # - name: Merge the release PR
       #   run: |
       #     PR_NUMBER=${{ steps.find_matching_prs.outputs.pr_number }}
