@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Release
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      current_version_array:
+        description: 'Current full version of the project expressed as a JSON array (e.g. `["24", "03", "00"]`)'
+        required: true
+        type: string
+        default: '["24", "03", "00"]'
+      next_version_array:
+        description: 'Next full version of the project as a JSON array (e.g. `["24", "07", "00"]`)'
+        required: true
+        type: string
+        default: '["24", "07", "00"]'
+      create_codefreeze_pr:
+        description: 'Create/Update the codefreeze PR'
+        required: true
+        type: boolean
+        default: false
+      create_next_release_branch:
+        description: 'Creates the next release branch and configures tags'
+        required: true
+        type: boolean
+        default: false
+      update_next_release_versions:
+        description: 'Runs the update-version and commits the changes to the next release branch'
+        required: true
+        type: boolean
+        default: false
+      update_changelog:
+        description: 'Updates the CHANGELOG.md file for the current release and commits the changes to the current release branch'
+        required: true
+        type: boolean
+        default: false
+      merge_release_branch:
+        description: 'Merges the code freeze release branch, creates the release tag, and creates a new Github release'
+        required: true
+        type: boolean
+        default: false
+
+# env:
+#   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#   REPO_NAME: ${{ github.event.repository.name }}
+#   CURRENT_VERSION: ${{ format('{0}.{1}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1]) }}
+#   CURRENT_FULL_VERSION: ${{ format('{0}.{1}.{2}', fromJson(inputs.current_version_array)[0], fromJson(inputs.current_version_array)[1], fromJson(inputs.current_version_array)[2]) }}
+#   NEXT_VERSION: ${{ format('{0}.{1}', fromJson(inputs.next_version_array)[0], fromJson(inputs.next_version_array)[1]) }}
+#   NEXT_FULL_VERSION: ${{ format('{0}.{1}.{2}', fromJson(inputs.next_version_array)[0], fromJson(inputs.next_version_array)[1], fromJson(inputs.next_version_array)[2]) }}
+
+jobs:
+  release_procedures:
+    uses: nv-morpheus/utilities/.github/workflows/release_procedures.yml@mdd_release-procedures
+    with:
+      current_version_array: ${{ inputs.current_version_array }}
+      next_version_array: ${{ inputs.next_version_array }}
+      create_codefreeze_pr: ${{ inputs.create_codefreeze_pr }}
+      create_next_release_branch: ${{ inputs.create_next_release_branch }}
+      update_next_release_versions: ${{ inputs.update_next_release_versions }}
+      update_changelog: ${{ inputs.update_changelog }}
+      merge_release_branch: ${{ inputs.merge_release_branch }}
+    secrets:
+      ACTIONS_APP_ID: ${{ secrets.ACTIONS_APP_ID }}
+      ACTIONS_APP_KEY: ${{ secrets.ACTIONS_APP_KEY }}
