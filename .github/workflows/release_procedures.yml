@@ -226,27 +226,29 @@ jobs:
       #   run: |
       #     PR_NUMBER=${{ steps.find_matching_prs.outputs.pr_number }}
       #     gh pr merge ${PR_NUMBER} --repo ${{ github.repository }} --merge
-      # - name: Checkout main branch
-      #   uses: actions/checkout@v3
-      #   with:
-      #     lfs: false
-      #     path: ${{ env.REPO_NAME }}
-      #     ref: main
-      #     fetch-tags: true # Fetch all tags
-      #     token: ${{ steps.configure-bot.outputs.token }}
-      # - name: Create release commit and tag
-      #   run: |
-      #     cd ${REPO_NAME}
-      #     git commit --allow-empty -m "REL v${CURRENT_FULL_VERSION} release"
-      #     git tag -a -m "$(date +"%B %Y") Release" v${CURRENT_FULL_VERSION}
-      #     git push origin main v${CURRENT_FULL_VERSION}
-      # - name: Create Github release
-      #   run: |
-      #     # Get the release body from the current nightly release
-      #     RELEASE_BODY=$(gh release view v${CURRENT_FULL_VERSION}a --repo ${{ github.repository }} --json body | jq -r '.body' | tail -n +6)
+      - name: Checkout main branch
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: ${{ env.REPO_NAME }}
+          ref: main
+          fetch-tags: true # Fetch all tags
+          token: ${{ steps.configure-bot.outputs.token }}
+      - name: Create release commit and tag
+        run: |
+          cd ${REPO_NAME}
+          git commit --allow-empty -m "REL v${CURRENT_FULL_VERSION} release"
+          git tag -a -m "$(date +"%B %Y") Release" v${CURRENT_FULL_VERSION}
+          # git push origin main v${CURRENT_FULL_VERSION}
+          git push origin v${CURRENT_FULL_VERSION}
+      - name: Create Github release
+        run: |
+          # Get the release body from the current nightly release
+          RELEASE_BODY=$(gh release view v${CURRENT_FULL_VERSION}a --repo ${{ github.repository }} --json body | jq -r '.body' | tail -n +6)
 
-      #     # Build the release for Github
-      #     gh release create v${CURRENT_FULL_VERSION} --repo ${{ github.repository }} \
-      #       --title "v${CURRENT_FULL_VERSION}" \
-      #       --notes "${RELEASE_BODY}" \
-      #       --verify-tag
+          # Build the release for Github
+          gh release create v${CURRENT_FULL_VERSION} --repo ${{ github.repository }} \
+            --title "v${CURRENT_FULL_VERSION}" \
+            --notes "${RELEASE_BODY}" \
+            --verify-tag \
+            --draft
