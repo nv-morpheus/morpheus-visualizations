@@ -29,7 +29,7 @@ body:
     attributes:
       label: Version
       description: What version of Morpheus are you running?
-      placeholder: "example: 23.11"
+      placeholder: "example: 24.03"
     validations:
       required: true
 
