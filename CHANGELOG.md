@@ -1,3 +1,9 @@
+# morpheus-visualizations 24.03.00 (27 Mar 2024)
+
+## 🚀 New Features
+
+- Update ops-bot.yaml ([#35](https://github.com/nv-morpheus/morpheus-visualizations/pull/35)) [@AyodeAwe](https://github.com/AyodeAwe)
+
 # morpheus-visualizations 23.11.00 (30 Nov 2023)
 
 ## 🛠️ Improvements
