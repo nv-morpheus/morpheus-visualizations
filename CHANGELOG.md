@@ -1,3 +1,6 @@
+# morpheus-visualizations 24.06.00 (02 Jul 2024)
+There are no changes for v24.06.00.
+
 # morpheus-visualizations 23.11.00 (30 Nov 2023)
 
 ## 🛠️ Improvements
