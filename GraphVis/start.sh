@@ -20,7 +20,6 @@
 #     --edge_buffer_size=4 \
 #     --pipeline_batch_size=1024 \
 #     --model_max_batch_size=32 \
-#     --use_cpp=True \
 #     pipeline-nlp \
 #     --model_seq_length=256 from-file \
 #     --filename=data/pcap_dump.jsonlines deserialize preprocess \
@@ -52,7 +51,6 @@ docker run --rm -it \
 DOCKER_IMAGE_TAG=latest ./docker/run_container_dev.sh
 pip install -e . && pip install websockets
 python examples/sid_visualization/run.py \
-  --use_cpp=False \
   --num_threads=1 \
   --max_batch_size=4096 \
   --input_file=./examples/data/sid_visualization/group1-benign-2nodes-v2.jsonlines \
