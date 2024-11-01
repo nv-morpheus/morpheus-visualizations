@@ -1,3 +1,14 @@
+# morpheus-visualizations 24.10.00 (01 Nov 2024)
+
+## 🐛 Bug Fixes
+
+- Remove --use_cpp flags per cpu-only changes in Morpheus ([#42](https://github.com/nv-morpheus/morpheus-visualizations/pull/42)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 📖 Documentation
+
+- Update the minimal GPU requirement to Volta and use CUDA 12.5 in documentation ([#45](https://github.com/nv-morpheus/morpheus-visualizations/pull/45)) [@yczhang-nv](https://github.com/yczhang-nv)
+- Forward-merge branch-24.06 into branch-24.10 ([#39](https://github.com/nv-morpheus/morpheus-visualizations/pull/39)) @rapids-bot[bot]
+
 # morpheus-visualizations 24.06.00 (02 Jul 2024)
 There are no changes for v24.06.00.
 

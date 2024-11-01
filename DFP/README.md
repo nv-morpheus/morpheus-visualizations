@@ -16,9 +16,8 @@ The application backend compute is powered by the NODE RAPIDS (specifically @rap
 
 ### CUDA/GPU requirements
 
-- CUDA 11.0+
-- NVIDIA driver 450.80.02+
-- Pascal architecture or better (Compute Capability >=6.0)
+- Volta architecture GPU or better
+- [CUDA 12.5](https://developer.nvidia.com/cuda-12-5-0-download-archive)
 
 ### OS requirements
 
