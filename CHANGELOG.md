@@ -1,3 +1,6 @@
+# morpheus-visualizations 25.02.00 (03 Feb 2025)
+There are no changes for v25.02.00
+
 # morpheus-visualizations 24.10.00 (01 Nov 2024)
 
 ## 🐛 Bug Fixes
