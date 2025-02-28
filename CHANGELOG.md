@@ -1,3 +1,8 @@
+# morpheus-visualizations 25.02.01 (28 Feb 2025)
+
+## 🛠️ Improvements
+- Update package versions to avoid CVEs ([#50](https://github.com/nv-morpheus/morpheus-visualizations/pull/50)) [@yczhang-nv](https://github.com/yczhang-nv)
+
 # morpheus-visualizations 25.02.00 (03 Feb 2025)
 There are no changes for v25.02.00
 
