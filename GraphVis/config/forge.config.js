@@ -16,9 +16,9 @@ if (process.env.MAKE_ZIP === '1' || makers.length === 0) {
 module.exports = {
   packagerConfig: {},
   makers,
-  plugins: [[
-    '@electron-forge/plugin-webpack',
-    {
+  plugins: [{
+    name: '@electron-forge/plugin-webpack',
+    config: {
       devContentSecurityPolicy: `\
 ${`default-src 'self' 'unsafe-eval' 'unsafe-inline' data:;`}\
 ${`script-src 'self' 'unsafe-eval' 'unsafe-inline' data:;`}\
@@ -38,5 +38,5 @@ ${`script-src-elem 'self' 'unsafe-eval' 'unsafe-inline' unpkg.com *.unpkg.com da
         ]
       }
     }
-  ]]
+  }]
 };
