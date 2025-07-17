@@ -10,6 +10,9 @@ ARG FROM_IMAGE=${REPOSITORY}:${RAPIDS_VERSION}-runtime-node${NODE_VERSION}-cuda$
 ARG DEVEL_IMAGE=${REPOSITORY}:${RAPIDS_VERSION}-devel-node${NODE_VERSION}-cuda${CUDA_VERSION}-${LINUX_VERSION}-main
 
 FROM ${DEVEL_IMAGE} as devel
+ARG CUDA_VERSION
+ARG RAPIDSAI_GPU_ARCH
+
 
 USER root
 
@@ -30,23 +33,16 @@ RUN apt update \
     /var/cache/apt/* \
     /var/lib/apt/lists/*
 
-ARG CUDA_VERSION
-ARG RAPIDSAI_GPU_ARCH
-
-RUN --mount=type=bind,source=.,target=/opt/rapids/node,rw \
-<<EOF
-
-RAPIDSAI_GPU_ARCH=${RAPIDSAI_GPU_ARCH} \
-RAPIDSAI_CUDA_VERSION=${CUDA_VERSION} \
-RAPIDSAI_SKIP_DOWNLOAD=0 \
-yarn
-
-MAKE_DEB=1 yarn make
-
-cp -ar out/make/deb/x64/nvidia-morpheus-graphvis_*.deb \
+COPY . /opt/rapids/node
+RUN cd /opt/rapids/node && \
+    mkdir -p .webpack/main && \
+    RAPIDSAI_GPU_ARCH=${RAPIDSAI_GPU_ARCH} && \
+    RAPIDSAI_CUDA_VERSION=${CUDA_VERSION} && \
+    RAPIDSAI_SKIP_DOWNLOAD=0 && \
+    yarn && \
+    MAKE_DEB=1 yarn make && \
+    cp -ar out/make/deb/x64/nvidia-morpheus-graphvis_*.deb \
        /opt/nvidia-morpheus-graphvis.deb
-
-EOF
 
 FROM ${FROM_IMAGE}
 
