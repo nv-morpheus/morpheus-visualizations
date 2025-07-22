@@ -1,3 +1,9 @@
+# morpheus-visualizations 25.06.00 (22 Jul 2025)
+
+## 🐛 Bug Fixes
+
+- Revert breaking changes for sid-viz example ([#57](https://github.com/nv-morpheus/morpheus-visualizations/pull/57)) [@dagardner-nv](https://github.com/dagardner-nv)
+
 # morpheus-visualizations 25.02.01 (28 Feb 2025)
 
 ## 🛠️ Improvements
